@@ -1,0 +1,413 @@
+import type { ThemeClasses, InkflowOptions, LocaleDict } from '../types/index';
+import { icons } from './icons';
+
+/**
+ * Toolbar Component
+ * Manages the creation, state, and event dispatching for the editor toolbar.
+ */
+export class Toolbar {
+    // ============================================================================
+    // Fields
+    // ============================================================================
+    private container: HTMLElement;
+    private editorArea: HTMLElement;
+    private theme: ThemeClasses;
+    private config: Array<string | string[]>;
+    private locale: LocaleDict;
+    private hooks?: InkflowOptions['hooks'];
+
+    private buttonElements: Map<string, HTMLButtonElement | HTMLElement> = new Map();
+    private headingSelectEl: HTMLSelectElement | null = null;
+
+    // ============================================================================
+    // Constructor
+    // ============================================================================
+    /**
+     * Initializes the Toolbar and renders it into the container.
+     */
+    constructor(
+        container: HTMLElement,
+        editorArea: HTMLElement,
+        theme: ThemeClasses,
+        config: Array<string | string[]>,
+        locale: LocaleDict,
+        hooks?: InkflowOptions['hooks']
+    ) {
+        this.container = container;
+        this.editorArea = editorArea;
+        this.theme = theme;
+        this.config = config;
+        this.locale = locale;
+        this.hooks = hooks;
+
+        this.render();
+    }
+
+    // ============================================================================
+    // DOM Rendering (Init)
+    // ============================================================================
+    /**
+     * Parses the 2D configuration array and renders DOM elements accordingly.
+     */
+    private render(): void {
+        this.container.innerHTML = '';
+        this.buttonElements.clear();
+
+        this.config.forEach(groupItem => {
+            const groupArr = Array.isArray(groupItem) ? groupItem : [groupItem];
+            const groupEl = document.createElement('div');
+            groupEl.className = this.theme.toolbarGroup;
+
+            groupArr.forEach(itemName => {
+                if (itemName === 'heading') {
+                    groupEl.appendChild(this.createHeadingSelect());
+                } else if (icons[itemName]) {
+                    groupEl.appendChild(this.createButton(itemName));
+                }
+            });
+
+            if (groupEl.childNodes.length > 0) {
+                this.container.appendChild(groupEl);
+            }
+        });
+    }
+
+    private createHeadingSelect(): HTMLSelectElement {
+        const select = document.createElement('select');
+        select.className = this.theme.select;
+
+        const options = [
+            { val: 'p', text: this.locale.toolbar.normal || 'Normal' },
+            { val: 'h1', text: this.locale.toolbar.h1 || 'H1' },
+            { val: 'h2', text: this.locale.toolbar.h2 || 'H2' },
+            { val: 'h3', text: this.locale.toolbar.h3 || 'H3' },
+            { val: 'h4', text: this.locale.toolbar.h4 || 'H4' },
+            { val: 'h5', text: this.locale.toolbar.h5 || 'H5' },
+            { val: 'h6', text: this.locale.toolbar.h6 || 'H6' }
+        ];
+
+        options.forEach(opt => {
+            const optionEl = document.createElement('option');
+            optionEl.value = opt.val;
+            optionEl.textContent = opt.text;
+            select.appendChild(optionEl);
+        });
+
+        select.addEventListener('change', e => {
+            const target = e.target as HTMLSelectElement;
+            this.executeCommand('heading', target.value);
+        });
+
+        this.headingSelectEl = select;
+        return select;
+    }
+
+    private createButton(btnName: string): HTMLElement {
+        if (btnName === 'table') {
+            return this.createTablePickerButton(btnName);
+        }
+
+        const btnEl = document.createElement('button');
+        btnEl.className = this.theme.button;
+        btnEl.innerHTML = icons[btnName];
+        btnEl.title = this.locale.toolbar[btnName] || btnName;
+        btnEl.type = 'button';
+
+        btnEl.addEventListener('click', e => {
+            e.preventDefault();
+
+            if (btnName === 'sourceCode' || btnName === 'fullscreen') {
+                btnEl.classList.toggle(this.theme.buttonActive);
+            }
+
+            this.executeCommand(btnName);
+        });
+
+        this.buttonElements.set(btnName, btnEl);
+        return btnEl;
+    }
+
+    // ============================================================================
+    // Public API
+    // ============================================================================
+    /**
+     * Synchronizes the UI state (active classes, select values) with the current cursor position.
+     */
+    public updateState(): void {
+        this.syncHeadingSelect();
+        this.syncButtonsState();
+    }
+
+    private syncHeadingSelect(): void {
+        if (!this.headingSelectEl) return;
+        try {
+            const currentBlock = document.queryCommandValue('formatBlock').toLowerCase();
+            this.headingSelectEl.value = currentBlock || 'p';
+        } catch {
+            this.headingSelectEl.value = 'p';
+        }
+    }
+
+    private syncButtonsState(): void {
+        const stateQueries: Record<string, string> = {
+            bold: 'bold',
+            italic: 'italic',
+            underline: 'underline',
+            strike: 'strikeThrough',
+            alignLeft: 'justifyLeft',
+            alignCenter: 'justifyCenter',
+            alignRight: 'justifyRight',
+            listUl: 'insertUnorderedList',
+            listOl: 'insertOrderedList'
+        };
+
+        this.buttonElements.forEach((btnEl, btnName) => {
+            try {
+                let isActive = false;
+                if (btnName === 'blockquote') {
+                    isActive =
+                        document.queryCommandValue('formatBlock').toLowerCase() === 'blockquote';
+                } else if (stateQueries[btnName]) {
+                    isActive = document.queryCommandState(stateQueries[btnName]);
+                }
+
+                if (isActive) {
+                    btnEl.classList.add(this.theme.buttonActive);
+                } else {
+                    btnEl.classList.remove(this.theme.buttonActive);
+                }
+            } catch {
+                // Ignore queryCommandState errors for unsupported commands
+            }
+        });
+    }
+
+    // ============================================================================
+    // Command Dispatching
+    // ============================================================================
+    /**
+     * Central command dispatcher that routes commands to native execCommand or custom events.
+     */
+    private executeCommand(command: string, value?: string): void {
+        this.editorArea.focus();
+
+        if (command === 'link') return void this.handleInsertLink();
+        if (command === 'image') return void this.handleInsertImage();
+        if (command === 'video') return void this.handleInsertVideo();
+
+        const commandMap: Record<string, string> = {
+            bold: 'bold',
+            italic: 'italic',
+            underline: 'underline',
+            strike: 'strikeThrough',
+            alignLeft: 'justifyLeft',
+            alignCenter: 'justifyCenter',
+            alignRight: 'justifyRight',
+            listUl: 'insertUnorderedList',
+            listOl: 'insertOrderedList',
+            eraser: 'removeFormat',
+            divider: 'insertHorizontalRule',
+            undo: 'undo',
+            redo: 'redo'
+        };
+
+        if (command === 'heading' && value) {
+            document.execCommand('formatBlock', false, value);
+        } else if (command === 'blockquote') {
+            const currentBlock = document.queryCommandValue('formatBlock').toLowerCase();
+            const targetBlock = currentBlock === 'blockquote' ? 'p' : 'blockquote';
+            document.execCommand('formatBlock', false, targetBlock);
+        } else if (command === 'inlineCode') {
+            const selection = window.getSelection();
+            const text = selection?.toString();
+            if (text) {
+                document.execCommand('insertHTML', false, `<code>${text}</code>`);
+            } else {
+                // Since inline elements in contenteditable require a selection to wrap properly natively,
+                // we prompt the user if they didn't select anything.
+                alert('请先选中一段文字，再点击行内代码按钮。\n(Please select some text first.)');
+            }
+        } else if (commandMap[command]) {
+            document.execCommand(commandMap[command], false, '');
+        } else {
+            // Dispatch to Editor for custom handling
+            const event = new CustomEvent('inkflow-custom-command', { detail: { command } });
+            this.container.dispatchEvent(event);
+            return;
+        }
+
+        this.updateState();
+
+        const historyEvent = new CustomEvent('inkflow-format-changed');
+        this.editorArea.dispatchEvent(historyEvent);
+    }
+
+    // ============================================================================
+    // Async Insert Handlers (Link, Image, Video)
+    // ============================================================================
+    private async handleInsertLink(): Promise<void> {
+        const savedRange = this.saveSelection();
+        if (!savedRange) return;
+
+        const url = this.hooks?.onInsertLink
+            ? await this.hooks.onInsertLink()
+            : window.prompt(this.locale.prompts.linkUrl, this.locale.prompts.linkDefault);
+
+        if (!url) return;
+
+        this.restoreSelection(savedRange);
+        document.execCommand('createLink', false, url);
+        this.postAsyncCommand();
+    }
+
+    private async handleInsertImage(): Promise<void> {
+        const savedRange = this.saveSelection();
+        if (!savedRange) return;
+
+        const url = this.hooks?.onInsertImage
+            ? await this.hooks.onInsertImage()
+            : window.prompt(this.locale.prompts.imageUrl, this.locale.prompts.linkDefault);
+
+        if (!url) return;
+
+        this.restoreSelection(savedRange);
+        document.execCommand('insertImage', false, url);
+        this.postAsyncCommand();
+    }
+
+    private async handleInsertVideo(): Promise<void> {
+        const savedRange = this.saveSelection();
+        if (!savedRange) return;
+
+        const url = this.hooks?.onInsertVideo
+            ? await this.hooks.onInsertVideo()
+            : window.prompt(this.locale.prompts.videoUrl, this.locale.prompts.linkDefault);
+
+        if (!url) return;
+
+        this.restoreSelection(savedRange);
+        const videoHtml = url.includes('<iframe')
+            ? url
+            : `<video src="${url}" controls style="max-width: 100%;"></video>`;
+        document.execCommand('insertHTML', false, videoHtml);
+        this.postAsyncCommand();
+    }
+
+    private saveSelection(): Range | null {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return null;
+        return selection.getRangeAt(0).cloneRange();
+    }
+
+    private restoreSelection(range: Range): void {
+        this.editorArea.focus();
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+    }
+
+    private postAsyncCommand(): void {
+        this.updateState();
+        this.editorArea.dispatchEvent(new CustomEvent('inkflow-format-changed'));
+    }
+
+    // ============================================================================
+    // Complex UI Components (Table Picker)
+    // ============================================================================
+    private createTablePickerButton(btnName: string): HTMLElement {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'inkflow-table-btn-wrapper';
+
+        const btnEl = document.createElement('button');
+        btnEl.className = this.theme.button;
+        btnEl.innerHTML = icons[btnName];
+        btnEl.title = this.locale.toolbar[btnName] || btnName;
+        btnEl.type = 'button';
+        this.buttonElements.set(btnName, btnEl);
+
+        const pickerEl = document.createElement('div');
+        pickerEl.className = 'inkflow-table-picker';
+
+        const gridEl = document.createElement('div');
+        gridEl.className = 'inkflow-table-picker-grid';
+
+        const labelEl = document.createElement('div');
+        labelEl.className = 'inkflow-table-picker-label';
+        labelEl.innerText = '0 x 0';
+
+        const cells = this.buildTableGrid(pickerEl, labelEl);
+        cells.forEach(cell => gridEl.appendChild(cell));
+
+        pickerEl.appendChild(gridEl);
+        pickerEl.appendChild(labelEl);
+
+        wrapper.appendChild(btnEl);
+        wrapper.appendChild(pickerEl);
+
+        this.bindTablePickerEvents(wrapper, btnEl, pickerEl, cells, labelEl);
+
+        return wrapper;
+    }
+
+    private buildTableGrid(pickerEl: HTMLElement, labelEl: HTMLElement): HTMLElement[] {
+        const cells: HTMLElement[] = [];
+        for (let r = 1; r <= 10; r++) {
+            for (let c = 1; c <= 10; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'inkflow-table-picker-cell';
+                cell.dataset.row = r.toString();
+                cell.dataset.col = c.toString();
+
+                cell.addEventListener('mouseover', () => {
+                    labelEl.innerText = `${r} x ${c}`;
+                    cells.forEach(el => {
+                        const elRow = parseInt(el.dataset.row!);
+                        const elCol = parseInt(el.dataset.col!);
+                        if (elRow <= r && elCol <= c) {
+                            el.classList.add('is-hovered');
+                        } else {
+                            el.classList.remove('is-hovered');
+                        }
+                    });
+                });
+
+                cell.addEventListener('click', () => {
+                    pickerEl.classList.remove('is-visible');
+                    const event = new CustomEvent('inkflow-custom-command', {
+                        detail: { command: 'table', rows: r, cols: c }
+                    });
+                    this.container.dispatchEvent(event);
+                });
+
+                cells.push(cell);
+            }
+        }
+        return cells;
+    }
+
+    private bindTablePickerEvents(
+        wrapper: HTMLElement,
+        btnEl: HTMLElement,
+        pickerEl: HTMLElement,
+        cells: HTMLElement[],
+        labelEl: HTMLElement
+    ): void {
+        btnEl.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const isVisible = pickerEl.classList.contains('is-visible');
+            if (!isVisible) {
+                cells.forEach(el => el.classList.remove('is-hovered'));
+                labelEl.innerText = '0 x 0';
+            }
+            pickerEl.classList.toggle('is-visible');
+        });
+
+        document.addEventListener('click', e => {
+            if (!wrapper.contains(e.target as Node)) {
+                pickerEl.classList.remove('is-visible');
+            }
+        });
+    }
+}
