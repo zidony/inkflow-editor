@@ -42,8 +42,8 @@ export interface InkflowOptions {
     toolbar?: Array<string | string[]>;
     /** Placeholder text displayed when the editor is empty. */
     placeholder?: string;
-    /** Interface language (e.g., 'en-US', 'zh-CN'). */
-    lang?: 'en-US' | 'zh-CN';
+    /** Interface language (e.g., 'en-US', 'zh-CN') or a custom LocaleDict object. */
+    lang?: 'en-US' | 'zh-CN' | LocaleDict;
     /** Custom CSS height for the editor container. */
     height?: string;
 
@@ -72,4 +72,9 @@ export interface EditorInstance {
     setHTML(html: string): void;
     /** Completely removes the editor from the DOM and cleans up resources. */
     destroy(): void;
+
+    // Event Bus
+    on(event: string, handler: (...args: any[]) => void): void;
+    off(event: string, handler: (...args: any[]) => void): void;
+    emit(event: string, ...args: any[]): void;
 }

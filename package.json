@@ -19,12 +19,16 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint \"src/**/*.ts\"",
-    "format": "prettier --write \"src/**/*.{ts,js,css,html}\""
+    "preview": "vite preview",
+    "format": "prettier --write \"src/**/*.{ts,js,css,html}\"",
+    "lint": "eslint src --ext .ts",
+    "release": "npm run build && node scripts/release.js"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.59.4",
     "@typescript-eslint/parser": "^8.59.4",
+    "adm-zip": "^0.5.17",
+    "archiver": "^8.0.0",
     "eslint": "^10.4.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",

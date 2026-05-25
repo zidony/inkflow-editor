@@ -5,11 +5,13 @@ import { HistoryManager } from './history';
 import { enUS } from '../locales/en-US';
 import { zhCN } from '../locales/zh-CN';
 
+import { EventEmitter } from './emitter';
+
 /**
  * Core InkflowEditor Class
  * Implements a lightweight, visual WYSIWYG editor with Markdown shortcuts and source code viewing.
  */
-export class InkflowEditor implements EditorInstance {
+export class InkflowEditor extends EventEmitter implements EditorInstance {
     // ============================================================================
     // Fields
     // ============================================================================
@@ -37,6 +39,7 @@ export class InkflowEditor implements EditorInstance {
      * @param options Configuration options for the editor.
      */
     constructor(options: InkflowOptions) {
+        super();
         this.options = options;
 
         const el =
@@ -50,9 +53,17 @@ export class InkflowEditor implements EditorInstance {
         this.containerEl = el;
 
         this.theme = typeof options.theme === 'object' ? options.theme : inkflowTheme;
-        this.locale = options.lang === 'en-US' ? enUS : zhCN;
 
-        this.initDOM();
+        if (typeof options.lang === 'object') {
+            this.locale = options.lang;
+        } else {
+            this.locale = options.lang === 'en-US' ? enUS : zhCN;
+        }
+
+        // Extract initial HTML before DOM is overwritten
+        const initialHtml = this.containerEl.innerHTML.trim();
+
+        this.initDOM(initialHtml);
         this.history = new HistoryManager(this.getHTML());
     }
 
@@ -62,11 +73,16 @@ export class InkflowEditor implements EditorInstance {
     /**
      * Bootstraps the DOM structure for the editor.
      */
-    private initDOM(): void {
+    private initDOM(initialHtml: string = ''): void {
         this.createWrapper();
         this.createToolbar();
         this.createEditorArea();
         this.createSourceArea();
+        
+        // Inject the initial HTML
+        if (initialHtml) {
+            this.editorAreaEl.innerHTML = initialHtml;
+        }
 
         this.wrapperEl.appendChild(this.toolbarEl);
         this.wrapperEl.appendChild(this.editorAreaEl);
@@ -77,6 +93,9 @@ export class InkflowEditor implements EditorInstance {
 
         this.initializeToolbar();
         this.bindEvents();
+
+        // Emit ready event after DOM is fully initialized
+        setTimeout(() => this.emit('ready', this), 0);
     }
 
     private createWrapper(): void {
@@ -171,7 +190,9 @@ export class InkflowEditor implements EditorInstance {
      * Triggers an immediate history snapshot save.
      */
     public saveHistoryNow(): void {
-        this.history.saveSnapshot(this.getHTML());
+        const html = this.getHTML();
+        this.history.saveSnapshot(html);
+        this.emit('change', html);
     }
 
     /**
@@ -188,6 +209,10 @@ export class InkflowEditor implements EditorInstance {
      * Binds native DOM events and custom widget events.
      */
     private bindEvents(): void {
+        // Lifecycle events
+        this.editorAreaEl.addEventListener('focus', () => this.emit('focus'));
+        this.editorAreaEl.addEventListener('blur', () => this.emit('blur'));
+
         // Selection tracking
         this.editorAreaEl.addEventListener('keyup', () => this.handleSelectionSave());
         this.editorAreaEl.addEventListener('mouseup', () => this.handleSelectionSave());
@@ -299,14 +324,16 @@ export class InkflowEditor implements EditorInstance {
 
         if (this.isSourceMode) {
             this.sourceCodeEl.value = this.formatOutputHTML(this.editorAreaEl.innerHTML);
-            // Fix height collapse: sync textarea height with the visual editor if height is not hardcoded
-            if (!this.options.height) {
-                this.sourceCodeEl.style.height = `${this.editorAreaEl.clientHeight}px`;
-            }
+            // Sync height so if user resized visual editor, source editor matches
+            this.sourceCodeEl.style.height = `${this.editorAreaEl.offsetHeight}px`;
+            
             this.editorAreaEl.style.display = 'none';
             this.sourceCodeEl.style.display = 'block';
         } else {
             this.editorAreaEl.innerHTML = this.sourceCodeEl.value;
+            // Sync height so if user resized source editor, visual editor matches
+            this.editorAreaEl.style.height = `${this.sourceCodeEl.offsetHeight}px`;
+            
             this.sourceCodeEl.style.display = 'none';
             this.editorAreaEl.style.display = 'block';
             this.saveHistoryNow();

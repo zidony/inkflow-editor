@@ -46,3 +46,5 @@ Desktop.ini
 
 # 7. 测试覆盖率报告 (Testing)
 coverage/
+releases/
+*.zip

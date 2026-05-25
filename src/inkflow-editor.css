@@ -1,34 +1,46 @@
 /* src/inkflow-editor.css */
 
 /* ============================================================
-   ROOT VARIABLES (Fallback colors if not provided by host CMS)
+   DESIGN SYSTEM & CSS CUSTOM PROPERTIES (Variables)
    ============================================================ */
 :root {
-    --ink-gray-50: #f9fafb;
-    --ink-gray-100: #f3f4f6;
-    --ink-gray-200: #e5e7eb;
-    --ink-gray-600: #4b5563;
-    --ink-gray-700: #374151;
-    --ink-gray-900: #111827;
+    /* Primary Brand Colors */
+    --inkflow-primary: #2563eb; /* Active icons, borders */
+    --inkflow-primary-light: #dbeafe; /* Active button background */
+    --inkflow-primary-alpha: rgba(37, 99, 235, 0.25); /* Focus rings */
 
-    --ink-100: #dbeafe; /* Light blue for active background */
-    --ink-400: #60a5fa; /* Border color for focus */
-    --ink-600: #2563eb; /* Dark blue for active icon */
+    /* Grayscale & Backgrounds */
+    --inkflow-bg-main: #ffffff; /* Editor body background */
+    --inkflow-bg-toolbar: #f9fafb; /* Toolbar background */
+    --inkflow-bg-hover: #f3f4f6; /* Button hover background */
+    --inkflow-border: #e5e7eb; /* Toolbar and editor borders */
 
-    --ink-focus-ring: 0 0 0 3px rgba(96, 165, 250, 0.25);
+    /* Text Colors */
+    --inkflow-text-main: #374151; /* Primary text */
+    --inkflow-text-muted: #6b7280; /* Icons and secondary text */
 
-    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    /* Source Code Mode (Light Gray Theme) */
+    --inkflow-bg-source: #f3f4f6; /* More distinct light gray */
+    --inkflow-text-source: #1f2937;
+
+    /* Focus & Layout */
+    --inkflow-focus-ring: 0 0 0 3px var(--inkflow-primary-alpha);
+    --inkflow-radius: 8px;
+
+    /* Typography */
+    --inkflow-font-sans:
+        system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --inkflow-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 /* ============================================================
    EDITOR CORE STYLES
    ============================================================ */
 .inkflow-toolbar {
-    background: var(--ink-gray-50);
-    border: 1.5px solid var(--ink-gray-200);
+    background: var(--inkflow-bg-toolbar);
+    border: 1.5px solid var(--inkflow-border);
     border-bottom: none;
-    border-radius: 8px 8px 0 0;
+    border-radius: var(--inkflow-radius) var(--inkflow-radius) 0 0;
     padding: 8px 10px;
     display: flex;
     align-items: center;
@@ -41,7 +53,7 @@
     align-items: center;
     gap: 1px;
     padding: 0 6px;
-    border-right: 1px solid var(--ink-gray-200);
+    border-right: 1px solid var(--inkflow-border);
 }
 
 .inkflow-toolbar .inkflow-toolbar-group:last-child {
@@ -58,7 +70,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: var(--ink-gray-600);
+    color: var(--inkflow-text-muted);
     font-size: 0.85rem;
     transition:
         background 0.12s,
@@ -66,22 +78,22 @@
 }
 
 .inkflow-btn:hover {
-    background: var(--ink-gray-200);
-    color: var(--ink-gray-900);
+    background: var(--inkflow-bg-hover);
+    color: var(--inkflow-text-main);
 }
 
-.inkflow-btn.is-active {
-    background: var(--ink-100);
-    color: var(--ink-600);
+.inkflow-btn.is-active,
+.inkflow-btn[aria-pressed='true'] {
+    background: var(--inkflow-primary-light);
+    color: var(--inkflow-primary);
 }
 
-/* [New] Heading Select Dropdown */
 .inkflow-select {
     border: none;
     background: transparent;
-    font-family: var(--font-sans);
+    font-family: var(--inkflow-font-sans);
     font-size: 0.85rem;
-    color: var(--ink-gray-700);
+    color: var(--inkflow-text-main);
     height: 28px;
     padding: 0 4px;
     cursor: pointer;
@@ -91,30 +103,33 @@
 }
 
 .inkflow-select:hover {
-    background: var(--ink-gray-200);
+    background: var(--inkflow-bg-hover);
 }
 
 .inkflow-editor-body {
-    border: 1.5px solid var(--ink-gray-200);
+    border: 1.5px solid var(--inkflow-border);
     border-top: none;
-    border-radius: 0 0 8px 8px;
+    border-radius: 0 0 var(--inkflow-radius) var(--inkflow-radius);
     min-height: 360px;
     padding: 16px;
-    background: #fff;
+    background: var(--inkflow-bg-main);
     font-size: 0.875rem;
     line-height: 1.7;
-    color: var(--ink-gray-700);
+    color: var(--inkflow-text-main);
     cursor: text;
     word-wrap: break-word;
     overflow-wrap: break-word;
     word-break: break-word;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+    resize: vertical;
+    box-sizing: border-box;
 }
 
 .inkflow-editor-body:focus {
     outline: none;
-    border-color: var(--ink-400);
-    box-shadow: var(--ink-focus-ring);
+    border-color: var(--inkflow-primary);
+    box-shadow: var(--inkflow-focus-ring);
 }
 
 /* Prevent media/table/code from exceeding editor width */
@@ -130,41 +145,40 @@
     width: 100%;
     max-width: 100%;
     border-collapse: collapse;
-    table-layout: fixed; /* 核心魔法：强制所有列宽均匀平分 */
+    table-layout: fixed;
     margin-bottom: 1rem;
-    background-color: #fff;
+    background-color: var(--inkflow-bg-main);
 }
 
 .inkflow-editor-body td,
 .inkflow-editor-body th {
-    border: 1px solid var(--ink-gray-200); /* 浅灰色优雅边框 */
-    padding: 10px 14px; /* 给单元格足够的呼吸空间 */
+    border: 1px solid var(--inkflow-border);
+    padding: 10px 14px;
     min-width: 1em;
     vertical-align: top;
-    word-break: break-all; /* 防止长串英文字符或代码撑爆列宽 */
+    word-break: break-all;
 }
 
-/* 即使是空单元格，hover时也给点反馈，体验更好 */
 .inkflow-editor-body td:hover {
-    background-color: var(--ink-gray-50);
+    background-color: var(--inkflow-bg-hover);
 }
 
 .inkflow-editor-body pre {
     white-space: pre;
     overflow-x: auto;
-    background: var(--ink-gray-50);
-    border: 1px solid var(--ink-gray-200);
+    background: var(--inkflow-bg-toolbar);
+    border: 1px solid var(--inkflow-border);
     border-radius: 6px;
     padding: 12px 14px;
     font-size: 0.82rem;
 }
 
 .inkflow-editor-body code {
-    background: var(--ink-gray-100);
+    background: var(--inkflow-bg-hover);
     padding: 1px 5px;
     border-radius: 3px;
     font-size: 0.83em;
-    font-family: var(--font-mono);
+    font-family: var(--inkflow-font-mono);
 }
 
 .inkflow-editor-body pre code {
@@ -177,16 +191,16 @@
 }
 
 /* ============================================================
-   [优化] SOURCE CODE MODE (暗黑极客风格源码模式)
+   SOURCE CODE MODE (Dark Mode Environment)
    ============================================================ */
 .inkflow-source-area {
-    background-color: var(--ink-gray-900) !important; /* 深黑色背景 */
-    color: var(--ink-gray-50) !important; /* 亮白色文字 */
-    font-family: var(--font-mono);
+    background-color: var(--inkflow-bg-source) !important;
+    color: var(--inkflow-text-source) !important;
+    font-family: var(--inkflow-font-mono);
     padding: 16px;
-    border: 1.5px solid var(--ink-gray-900);
+    border: 1.5px solid var(--inkflow-border);
     border-top: none;
-    border-radius: 0 0 8px 8px;
+    border-radius: 0 0 var(--inkflow-radius) var(--inkflow-radius);
     width: 100%;
     resize: vertical;
     outline: none;
@@ -195,12 +209,12 @@
 }
 
 .inkflow-source-area:focus {
-    border-color: var(--ink-600);
-    box-shadow: inset var(--ink-focus-ring);
+    border-color: var(--inkflow-primary);
+    box-shadow: inset var(--inkflow-focus-ring);
 }
 
 /* ============================================================
-   [新增] TABLE PICKER DROPDOWN (Summernote 风格表格矩阵)
+   TABLE PICKER DROPDOWN
    ============================================================ */
 .inkflow-table-btn-wrapper {
     position: relative;
@@ -212,8 +226,8 @@
     top: 100%;
     left: 0;
     z-index: 1000;
-    background: #fff;
-    border: 1px solid var(--ink-gray-200);
+    background: var(--inkflow-bg-main);
+    border: 1px solid var(--inkflow-border);
     border-radius: 6px;
     padding: 10px;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
@@ -234,25 +248,26 @@
 }
 
 .inkflow-table-picker-cell {
-    border: 1px solid var(--ink-gray-200);
-    background: #fff;
+    border: 1px solid var(--inkflow-border);
+    background: var(--inkflow-bg-main);
     cursor: pointer;
 }
 
 .inkflow-table-picker-cell.is-hovered {
-    background: var(--ink-100);
-    border-color: var(--ink-400);
+    background: var(--inkflow-primary-light);
+    border-color: var(--inkflow-primary);
 }
 
 .inkflow-table-picker-label {
     text-align: center;
     font-size: 13px;
     margin-top: 8px;
-    color: var(--ink-gray-600);
-    font-family: var(--font-sans);
+    color: var(--inkflow-text-muted);
+    font-family: var(--inkflow-font-sans);
 }
+
 /* ============================================================
-   [修复] FULLSCREEN MODE (全屏模式)
+   FULLSCREEN MODE
    ============================================================ */
 .inkflow-container.is-fullscreen {
     position: fixed !important;
@@ -261,7 +276,7 @@
     width: 100vw !important;
     height: 100vh !important;
     z-index: 99999 !important;
-    background-color: #fff !important;
+    background-color: var(--inkflow-bg-main) !important;
     display: flex;
     flex-direction: column;
     margin: 0 !important;

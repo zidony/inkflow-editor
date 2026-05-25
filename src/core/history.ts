@@ -6,6 +6,7 @@ export class HistoryManager {
     private stack: string[] = [];
     private currentIndex: number = -1;
     private readonly MAX_HISTORY_LENGTH = 50;
+    private readonly MAX_HISTORY_BYTES = 5 * 1024 * 1024; // 5MB total memory limit
 
     /**
      * Initializes a new history manager with an optional initial state.
@@ -16,8 +17,17 @@ export class HistoryManager {
     }
 
     /**
+     * Calculates the rough memory footprint of the current history stack.
+     */
+    private getStackByteSize(): number {
+        // JS strings are UTF-16, roughly 2 bytes per character
+        return this.stack.reduce((total, html) => total + html.length * 2, 0);
+    }
+
+    /**
      * Pushes a new HTML snapshot into the history stack.
      * Overwrites any future redo states if a new edit occurs after an undo.
+     * Includes memory management to prevent heap overflow on massive documents.
      * @param html The current HTML state of the editor.
      */
     public saveSnapshot(html: string): void {
@@ -30,11 +40,16 @@ export class HistoryManager {
         }
 
         this.stack.push(html);
+        this.currentIndex++;
 
-        if (this.stack.length > this.MAX_HISTORY_LENGTH) {
+        // Prune stack if it exceeds max length OR max memory (preventing memory leaks)
+        while (
+            (this.stack.length > this.MAX_HISTORY_LENGTH ||
+                this.getStackByteSize() > this.MAX_HISTORY_BYTES) &&
+            this.stack.length > 1
+        ) {
             this.stack.shift();
-        } else {
-            this.currentIndex++;
+            this.currentIndex--;
         }
     }
 

@@ -9,6 +9,8 @@ export default defineConfig({
         // 自动生成 TypeScript 声明文件
         dts({ insertTypesEntry: true }),
     ],
+    // 库模式下不要把 public/ 的静态资源复制到 dist/ 里
+    publicDir: false,
     build: {
         // 开启库编译模式
         lib: {

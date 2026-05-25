@@ -51,6 +51,8 @@ export class Toolbar {
      */
     private render(): void {
         this.container.innerHTML = '';
+        this.container.setAttribute('role', 'toolbar');
+        this.container.setAttribute('aria-label', 'Editor Toolbar');
         this.buttonElements.clear();
 
         this.config.forEach(groupItem => {
@@ -112,6 +114,8 @@ export class Toolbar {
         btnEl.innerHTML = icons[btnName];
         btnEl.title = this.locale.toolbar[btnName] || btnName;
         btnEl.type = 'button';
+        btnEl.setAttribute('aria-label', btnEl.title); // A11y
+        btnEl.setAttribute('aria-pressed', 'false'); // A11y
 
         btnEl.addEventListener('click', e => {
             e.preventDefault();
@@ -173,8 +177,10 @@ export class Toolbar {
 
                 if (isActive) {
                     btnEl.classList.add(this.theme.buttonActive);
+                    btnEl.setAttribute('aria-pressed', 'true');
                 } else {
                     btnEl.classList.remove(this.theme.buttonActive);
+                    btnEl.setAttribute('aria-pressed', 'false');
                 }
             } catch {
                 // Ignore queryCommandState errors for unsupported commands
@@ -219,13 +225,18 @@ export class Toolbar {
             document.execCommand('formatBlock', false, targetBlock);
         } else if (command === 'inlineCode') {
             const selection = window.getSelection();
-            const text = selection?.toString();
-            if (text) {
-                document.execCommand('insertHTML', false, `<code>${text}</code>`);
-            } else {
-                // Since inline elements in contenteditable require a selection to wrap properly natively,
-                // we prompt the user if they didn't select anything.
-                alert('请先选中一段文字，再点击行内代码按钮。\n(Please select some text first.)');
+            if (selection && selection.toString()) {
+                document.execCommand('insertHTML', false, `<code>${selection.toString()}</code>`);
+            } else if (selection && selection.rangeCount > 0) {
+                // If no text is selected, create an empty code block and place the cursor inside it
+                const codeNode = document.createElement('code');
+                codeNode.innerHTML = '&#8203;'; // Zero-width space to keep it selectable
+                const range = selection.getRangeAt(0);
+                range.insertNode(codeNode);
+                range.setStart(codeNode, 1);
+                range.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(range);
             }
         } else if (commandMap[command]) {
             document.execCommand(commandMap[command], false, '');
@@ -323,6 +334,9 @@ export class Toolbar {
         btnEl.innerHTML = icons[btnName];
         btnEl.title = this.locale.toolbar[btnName] || btnName;
         btnEl.type = 'button';
+        btnEl.setAttribute('aria-label', btnEl.title);
+        btnEl.setAttribute('aria-haspopup', 'true');
+        btnEl.setAttribute('aria-expanded', 'false');
         this.buttonElements.set(btnName, btnEl);
 
         const pickerEl = document.createElement('div');
@@ -402,11 +416,13 @@ export class Toolbar {
                 labelEl.innerText = '0 x 0';
             }
             pickerEl.classList.toggle('is-visible');
+            btnEl.setAttribute('aria-expanded', (!isVisible).toString());
         });
 
         document.addEventListener('click', e => {
             if (!wrapper.contains(e.target as Node)) {
                 pickerEl.classList.remove('is-visible');
+                btnEl.setAttribute('aria-expanded', 'false');
             }
         });
     }
