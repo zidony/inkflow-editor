@@ -55,6 +55,8 @@ export interface InkflowOptions {
         onInsertLink?: () => Promise<string | null>;
         /** Hook invoked when inserting an image. Should resolve to a URL or null. */
         onInsertImage?: () => Promise<string | null>;
+        /** Hook invoked when a raw image file is pasted or dropped. Should resolve to a URL or null. */
+        onUploadImage?: (file: File) => Promise<string | null>;
         /** Hook invoked when inserting a video. Should resolve to a URL or null. */
         onInsertVideo?: () => Promise<string | null>;
     };

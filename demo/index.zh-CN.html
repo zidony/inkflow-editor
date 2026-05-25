@@ -56,7 +56,17 @@
         const editor = new InkflowEditor({
             container: '#editor-container',
             lang: 'zh-CN',
-            placeholder: '在这里开始编写精彩的内容...'
+            placeholder: '请在此输入您的精彩内容...',
+            hooks: {
+                onUploadImage: async (file) => {
+                    return new Promise((resolve) => {
+                        console.log('正在上传图片:', file.name);
+                        setTimeout(() => {
+                            resolve('https://picsum.photos/seed/' + Math.random() + '/600/400');
+                        }, 1500);
+                    });
+                }
+            }
         });
         
         editor.on('ready', () => console.log('编辑器加载完毕！'));

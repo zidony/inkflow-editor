@@ -227,10 +227,28 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.handleShortcuts(e)
         );
 
-        // Paste sanitization
+        // Paste sanitization & Image upload
         this.editorAreaEl.addEventListener('paste', (e: ClipboardEvent) =>
             this.handlePasteEvent(e)
         );
+
+        // Drag and Drop Image upload
+        const preventNav = (e: DragEvent) => {
+            if (e.dataTransfer?.types.includes('Files')) {
+                e.preventDefault();
+            }
+        };
+        this.wrapperEl.addEventListener('dragenter', preventNav);
+        this.wrapperEl.addEventListener('dragover', preventNav);
+        this.wrapperEl.addEventListener('drop', (e: DragEvent) => {
+            if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+                e.preventDefault(); // Prevent browser navigation
+            }
+            // Only process image drop if it was dropped inside the editor area
+            if (this.editorAreaEl.contains(e.target as Node) || e.target === this.editorAreaEl) {
+                this.handleDropEvent(e);
+            }
+        });
 
         // Format changed listener from Toolbar
         this.editorAreaEl.addEventListener('inkflow-format-changed', () => this.saveHistoryNow());
@@ -285,6 +303,17 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         e.preventDefault();
         if (!e.clipboardData) return;
 
+        // Check for image files first if hook is provided
+        if (this.options.hooks?.onUploadImage && e.clipboardData.files && e.clipboardData.files.length > 0) {
+            for (let i = 0; i < e.clipboardData.files.length; i++) {
+                const file = e.clipboardData.files[i];
+                if (file.type.indexOf('image') !== -1) {
+                    this.processImageUpload(file);
+                    return; // intercept paste completely
+                }
+            }
+        }
+
         const html = e.clipboardData.getData('text/html');
         const text = e.clipboardData.getData('text/plain');
 
@@ -295,6 +324,64 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         }
 
         this.saveHistoryNow();
+    }
+
+    private handleDropEvent(e: DragEvent): void {
+        if (!this.options.hooks?.onUploadImage || !e.dataTransfer) return;
+        
+        const files = e.dataTransfer.files;
+        if (!files || files.length === 0) return;
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file.type.indexOf('image') !== -1) {
+                e.preventDefault(); // Prevent browser from opening the image directly
+                
+                // Update selection to drop position
+                if (document.caretRangeFromPoint) {
+                    const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+                    if (range) {
+                        const sel = window.getSelection();
+                        if (sel) {
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        }
+                    }
+                }
+                
+                this.processImageUpload(file);
+                return; // only process the first image
+            }
+        }
+    }
+
+    private async processImageUpload(file: File): Promise<void> {
+        const uploadId = 'upload-img-' + Math.random().toString(36).substring(2, 9);
+        const skeletonHtml = `<span id="${uploadId}" class="inkflow-img-skeleton" contenteditable="false">🖼️ Uploading...</span>&nbsp;`;
+        document.execCommand('insertHTML', false, skeletonHtml);
+        
+        const hook = this.options.hooks?.onUploadImage;
+        if (!hook) return;
+
+        try {
+            const url = await hook(file);
+            const skeletonEl = this.editorAreaEl.querySelector(`#${uploadId}`);
+            if (skeletonEl) {
+                if (url) {
+                    const imgHtml = `<img src="${url}" alt="image" style="max-width:100%;height:auto;">&nbsp;`;
+                    skeletonEl.outerHTML = imgHtml;
+                    this.saveHistoryNow();
+                } else {
+                    skeletonEl.remove();
+                }
+            }
+        } catch (error) {
+            console.error('Image upload failed:', error);
+            const skeletonEl = this.editorAreaEl.querySelector(`#${uploadId}`);
+            if (skeletonEl) {
+                skeletonEl.remove();
+            }
+        }
     }
 
     private handleCustomCommand(e: CustomEvent): void {

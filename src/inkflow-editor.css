@@ -291,3 +291,29 @@
     min-height: auto !important;
     border-radius: 0 !important;
 }
+
+/* ============================================================
+   SKELETON LOADERS
+   ============================================================ */
+.inkflow-img-skeleton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--inkflow-bg-toolbar);
+    border: 1px dashed var(--inkflow-border);
+    color: var(--inkflow-text-muted);
+    border-radius: var(--inkflow-radius);
+    padding: 20px;
+    margin: 5px;
+    font-size: 0.85rem;
+    font-family: var(--inkflow-font-sans);
+    min-width: 150px;
+    animation: inkflow-pulse 1.5s infinite ease-in-out;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+@keyframes inkflow-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
