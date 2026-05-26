@@ -508,6 +508,68 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         const sel = window.getSelection();
         if (!sel || !sel.focusNode) return;
 
+        const textNode = sel.focusNode;
+        const offset = sel.focusOffset;
+
+        // 1. Inline Markdown Parsing
+        if (textNode.nodeType === Node.TEXT_NODE) {
+            let isInsideCode = false;
+            let parent = textNode.parentNode;
+            while (parent && parent !== this.editorAreaEl) {
+                if (parent.nodeName === 'PRE' || parent.nodeName === 'CODE') {
+                    isInsideCode = true;
+                    break;
+                }
+                parent = parent.parentNode;
+            }
+
+            if (!isInsideCode) {
+                const textBeforeCursor = (textNode.textContent || '').substring(0, offset);
+                
+                const inlineRules = [
+                    { regex: /\*\*([^*]+)\*\*[\s\u00A0]$/, tag: 'strong' },
+                    { regex: /__([^_]+)__[\s\u00A0]$/, tag: 'strong' },
+                    { regex: /\*([^*]+)\*[\s\u00A0]$/, tag: 'em' },
+                    { regex: /_([^_]+)_[\s\u00A0]$/, tag: 'em' },
+                    { regex: /~~([^~]+)~~[\s\u00A0]$/, tag: 'del' },
+                    { regex: /`([^`]+)`[\s\u00A0]$/, tag: 'code' }
+                ];
+
+                for (const rule of inlineRules) {
+                    const match = rule.regex.exec(textBeforeCursor);
+                    if (match) {
+                        const matchLength = match[0].length;
+                        const startOffset = offset - matchLength;
+
+                        const range = document.createRange();
+                        range.setStart(textNode, startOffset);
+                        range.setEnd(textNode, offset);
+                        range.deleteContents();
+
+                        const newEl = document.createElement(rule.tag);
+                        newEl.textContent = match[1];
+
+                        range.insertNode(newEl);
+
+                        const spaceNode = document.createTextNode('\u00A0');
+                        if (newEl.parentNode) {
+                            newEl.parentNode.insertBefore(spaceNode, newEl.nextSibling);
+                        }
+
+                        sel.removeAllRanges();
+                        const newRange = document.createRange();
+                        newRange.setStart(spaceNode, 1);
+                        newRange.setEnd(spaceNode, 1);
+                        sel.addRange(newRange);
+
+                        this.saveHistoryNow();
+                        return; // Stop processing rules
+                    }
+                }
+            }
+        }
+
+        // 2. Block Markdown Parsing
         let block = sel.focusNode;
         while (block && block.nodeType !== Node.ELEMENT_NODE) {
             block = block.parentNode as Node;
@@ -525,7 +587,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         ];
 
         for (const rule of rules) {
-            if (text === rule.prefix) {
+            if (text === rule.prefix || text === rule.prefix.replace(' ', '\u00A0')) {
                 block.textContent = '';
                 this.editorAreaEl.focus();
                 document.execCommand(rule.command, false, rule.value);
