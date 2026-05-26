@@ -1,6 +1,6 @@
 {
   "name": "inkflow-editor",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "main": "./dist/inkflow-editor.umd.js",
   "module": "./dist/inkflow-editor.es.js",
@@ -19,6 +19,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:demo": "vite build -c vite.demo.config.ts",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,js,css,html}\"",
     "lint": "eslint src --ext .ts",
