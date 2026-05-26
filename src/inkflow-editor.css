@@ -141,6 +141,16 @@
     border-radius: 4px;
 }
 
+.inkflow-editor-body img {
+    cursor: pointer;
+    transition: outline 0.15s ease, box-shadow 0.15s ease;
+}
+
+.inkflow-editor-body img.is-selected {
+    outline: 2px solid var(--inkflow-primary);
+    box-shadow: 0 0 0 4px var(--inkflow-primary-alpha);
+}
+
 .inkflow-editor-body table {
     width: 100%;
     max-width: 100%;

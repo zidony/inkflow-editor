@@ -213,6 +213,17 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.editorAreaEl.addEventListener('focus', () => this.emit('focus'));
         this.editorAreaEl.addEventListener('blur', () => this.emit('blur'));
 
+        // Image selection
+        this.editorAreaEl.addEventListener('click', (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (target.tagName.toLowerCase() === 'img') {
+                this.clearImageSelection();
+                target.classList.add('is-selected');
+            } else {
+                this.clearImageSelection();
+            }
+        });
+
         // Selection tracking
         this.editorAreaEl.addEventListener('keyup', () => this.handleSelectionSave());
         this.editorAreaEl.addEventListener('mouseup', () => this.handleSelectionSave());
@@ -266,6 +277,11 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         }
     }
 
+    private clearImageSelection(): void {
+        const selectedImages = this.editorAreaEl.querySelectorAll('img.is-selected');
+        selectedImages.forEach(img => img.classList.remove('is-selected'));
+    }
+
     private handleKeyboardEvent(e: KeyboardEvent): void {
         this.toolbarInstance.updateState();
 
@@ -280,6 +296,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             'Meta'
         ];
         if (!ignoredKeys.includes(e.key)) {
+            this.clearImageSelection();
             this.debounceSaveHistory();
         }
 
@@ -289,6 +306,17 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     }
 
     private handleShortcuts(e: KeyboardEvent): void {
+        // Image deletion
+        if (e.key === 'Backspace' || e.key === 'Delete') {
+            const selectedImage = this.editorAreaEl.querySelector('img.is-selected');
+            if (selectedImage) {
+                e.preventDefault();
+                selectedImage.remove();
+                this.saveHistoryNow();
+                return;
+            }
+        }
+
         const isCmdOrCtrl = e.metaKey || e.ctrlKey;
         if (isCmdOrCtrl && e.key.toLowerCase() === 'z') {
             e.preventDefault();
