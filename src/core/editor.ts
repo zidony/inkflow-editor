@@ -24,8 +24,10 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     private toolbarEl!: HTMLElement;
     private editorAreaEl!: HTMLElement;
     private sourceCodeEl!: HTMLTextAreaElement;
+    private resizerOverlayEl!: HTMLElement;
 
     private isSourceMode: boolean = false;
+    private activeResizingImage: HTMLImageElement | null = null;
     private toolbarInstance!: Toolbar;
     private history!: HistoryManager;
     private historyTimeout: number | null = null;
@@ -78,6 +80,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.createToolbar();
         this.createEditorArea();
         this.createSourceArea();
+        this.createResizerOverlay();
         
         // Inject the initial HTML
         if (initialHtml) {
@@ -87,6 +90,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.wrapperEl.appendChild(this.toolbarEl);
         this.wrapperEl.appendChild(this.editorAreaEl);
         this.wrapperEl.appendChild(this.sourceCodeEl);
+        this.wrapperEl.appendChild(this.resizerOverlayEl);
 
         this.containerEl.innerHTML = '';
         this.containerEl.appendChild(this.wrapperEl);
@@ -132,6 +136,97 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.sourceCodeEl.style.height = this.options.height;
             this.sourceCodeEl.style.overflowY = 'auto';
         }
+    }
+
+    private createResizerOverlay(): void {
+        this.resizerOverlayEl = document.createElement('div');
+        this.resizerOverlayEl.className = 'inkflow-image-resizer';
+        this.resizerOverlayEl.style.display = 'none';
+
+        const positions = ['nw', 'ne', 'sw', 'se'];
+        positions.forEach(pos => {
+            const handle = document.createElement('div');
+            handle.className = `inkflow-resizer-handle ${pos}`;
+            handle.dataset.pos = pos;
+            this.resizerOverlayEl.appendChild(handle);
+        });
+
+        this.bindResizerEvents();
+    }
+
+    private bindResizerEvents(): void {
+        let isDragging = false;
+        let startX = 0;
+        let startWidth = 0;
+        let activeHandle = '';
+
+        const onMouseMove = (e: MouseEvent) => {
+            if (!isDragging || !this.activeResizingImage) return;
+            e.preventDefault();
+
+            const dx = e.clientX - startX;
+            let newWidth = startWidth;
+
+            // Simple width scaling
+            if (activeHandle === 'se' || activeHandle === 'ne') {
+                newWidth = startWidth + dx;
+            } else if (activeHandle === 'sw' || activeHandle === 'nw') {
+                newWidth = startWidth - dx;
+            }
+
+            if (newWidth > 20) {
+                this.activeResizingImage.style.width = `${newWidth}px`;
+                this.activeResizingImage.style.height = 'auto';
+                this.updateResizerPosition(this.activeResizingImage);
+            }
+        };
+
+        const onMouseUp = () => {
+            if (isDragging) {
+                isDragging = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                this.saveHistoryNow();
+            }
+        };
+
+        this.resizerOverlayEl.addEventListener('mousedown', (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (target.classList.contains('inkflow-resizer-handle')) {
+                e.preventDefault();
+                isDragging = true;
+                startX = e.clientX;
+                startWidth = this.activeResizingImage?.offsetWidth || 0;
+                activeHandle = target.dataset.pos || '';
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            }
+        });
+    }
+
+    private updateResizerPosition(img: HTMLImageElement | null): void {
+        this.activeResizingImage = img;
+        if (!img) {
+            this.resizerOverlayEl.style.display = 'none';
+            return;
+        }
+        
+        const wrapperRect = this.wrapperEl.getBoundingClientRect();
+        const imgRect = img.getBoundingClientRect();
+
+        this.resizerOverlayEl.style.display = 'block';
+        // Check if image is out of bounds due to scroll
+        const editorRect = this.editorAreaEl.getBoundingClientRect();
+        if (imgRect.bottom <= editorRect.top || imgRect.top >= editorRect.bottom) {
+            this.resizerOverlayEl.style.display = 'none';
+            return;
+        }
+
+        this.resizerOverlayEl.style.top = `${imgRect.top - wrapperRect.top}px`;
+        this.resizerOverlayEl.style.left = `${imgRect.left - wrapperRect.left}px`;
+        this.resizerOverlayEl.style.width = `${imgRect.width}px`;
+        this.resizerOverlayEl.style.height = `${imgRect.height}px`;
     }
 
     private initializeToolbar(): void {
@@ -219,9 +314,18 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             if (target.tagName.toLowerCase() === 'img') {
                 this.clearImageSelection();
                 target.classList.add('is-selected');
+                this.updateResizerPosition(target as HTMLImageElement);
             } else {
                 this.clearImageSelection();
             }
+        });
+
+        // Scroll and resize tracking for resizer overlay
+        this.editorAreaEl.addEventListener('scroll', () => {
+            if (this.activeResizingImage) this.updateResizerPosition(this.activeResizingImage);
+        });
+        window.addEventListener('resize', () => {
+            if (this.activeResizingImage) this.updateResizerPosition(this.activeResizingImage);
         });
 
         // Selection tracking
@@ -280,6 +384,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     private clearImageSelection(): void {
         const selectedImages = this.editorAreaEl.querySelectorAll('img.is-selected');
         selectedImages.forEach(img => img.classList.remove('is-selected'));
+        this.updateResizerPosition(null);
     }
 
     private handleKeyboardEvent(e: KeyboardEvent): void {

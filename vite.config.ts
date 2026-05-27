@@ -6,25 +6,24 @@ import dts from 'vite-plugin-dts';
 
 export default defineConfig({
     plugins: [
-        // 自动生成 TypeScript 声明文件
+        // Auto-generate TypeScript declaration files
         dts({ insertTypesEntry: true }),
     ],
-    // 库模式下不要把 public/ 的静态资源复制到 dist/ 里
+    // Do not copy public/ static assets to dist/ in library mode
     publicDir: false,
     build: {
-        // 开启库编译模式
+        // Enable library build mode
         lib: {
-            entry: resolve(__dirname, 'src/index.ts'), // 指定刚建的入口文件
-            name: 'InkflowEditor', // 全局变量名 (针对 UMD 格式)
-            fileName: (format) => `inkflow-editor.${format}.js` // 输出文件名
+            entry: resolve(__dirname, 'src/index.ts'), // Entry point for the library
+            name: 'InkflowEditor', // Global variable name (for UMD format)
+            fileName: (format) => `inkflow-editor.${format}.js` // Output file name
         },
         rollupOptions: {
-            // 外部化依赖：因为我们坚持了零依赖，所以这里保持为空即可。
-            // 如果未来引入了第三方包但不希望打包进去，就写在这里。
+            // Externalize dependencies: keep it empty since it's a zero-dependency project.
+            // If third-party packages are introduced in the future but shouldn't be bundled, list them here.
             external: [],
             output: {
-                // 如果你的组件有 CSS，Vite 默认会打包出 style.css
-                // 这里我们可以重命名一下输出的 CSS 文件名
+                // Rename the default style.css output by Vite
                 assetFileNames: (assetInfo) => {
                     if (assetInfo.name === 'style.css') return 'inkflow-editor.css';
                     return assetInfo.name || '';

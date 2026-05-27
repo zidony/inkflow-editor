@@ -8,7 +8,7 @@ import { InkflowEditor } from './core/editor';
 const editor = new InkflowEditor({
     container: '.inkflow-editor',
     theme: 'inkflow',
-    lang: 'zh-CN',
+    lang: 'en-US',
     placeholder: 'Start writing in inkflow-editor...',
 
     hooks: {

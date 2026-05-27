@@ -327,3 +327,36 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
 }
+
+/* ============================================================
+   IMAGE RESIZER OVERLAY (Drag to Resize)
+   ============================================================ */
+.inkflow-container {
+    position: relative; /* Crucial for absolute overlay */
+}
+
+.inkflow-image-resizer {
+    position: absolute;
+    z-index: 100;
+    pointer-events: none; /* Let clicks pass through to the image below */
+    /* Remove outline/box-shadow from the img and put it here if we want,
+       but usually we just use the handlers. */
+}
+
+.inkflow-resizer-handle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background-color: #ffffff;
+    border: 2px solid var(--inkflow-primary);
+    border-radius: 50%;
+    pointer-events: auto; /* Important: allow grabbing the handles */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    /* Centers the handle on its corner */
+    transform: translate(-50%, -50%);
+}
+
+.inkflow-resizer-handle.nw { top: 0; left: 0; cursor: nwse-resize; }
+.inkflow-resizer-handle.ne { top: 0; left: 100%; cursor: nesw-resize; }
+.inkflow-resizer-handle.sw { top: 100%; left: 0; cursor: nesw-resize; }
+.inkflow-resizer-handle.se { top: 100%; left: 100%; cursor: nwse-resize; }
