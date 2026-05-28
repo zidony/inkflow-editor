@@ -9,12 +9,14 @@ Inkflow Editor is a lightweight, high-performance, and commercial-grade WYSIWYG 
 ## ✨ Features
 
 - **Zero Dependencies**: Pure Vanilla JS, extremely lightweight (`< 30KB` gzipped).
-- **World-Class Architecture**: Built on a robust Pub/Sub `EventEmitter` for elegant lifecycle hooks.
-- **Design System Ready**: Fully powered by CSS Custom Properties (Variables), making Dark Mode and brand theming a 1-line CSS override.
+- **Modern Engineering Architecture (SPA Safe)**: Built on a robust Pub/Sub `EventEmitter` for elegant hooks. Memory-safe design detaches all global `window`/`document` listeners upon `destroy()`.
+- **Caret Selection Preservation**: Temporary DOM Bookmarking preserves exact cursor/caret position on Undo and Redo actions seamlessly.
+- **Bottom Status Bar**: Dedicated status bar reporting word/character metrics, current mode, and dynamic flash badges ("Saved", "Undo", "Redo").
+- **Design System Ready**: Fully powered by CSS variables. Supports **`sm` / `md` / `lg`** scale adjustments for menu and relative-em icons seamlessly.
 - **Notion-Style Uploads**: Intercepts `Ctrl+V` and Drag & Drop to automatically render pulsing skeleton loaders while uploading.
-- **Image Drag-to-Resize**: Professional-grade, non-intrusive floating overlay for image selection and seamless dragging to resize.
-- **Inline Markdown Parsing**: Seamlessly converts `**bold**`, `*italic*`, and `` `code` `` on the fly while typing.
-- **Memory Optimized**: Smart History Manager with dynamic byte-size capping prevents browser OOM on massive documents.
+- **Image Drag-to-Resize**: Professional-grade, non-intrusive handlings for image selection and seamless dragging to resize.
+- **Efficient Markdown Shortcuts**: Instantly converts `**bold**`, `*italic*`, and `` `code` `` on the fly. Added block support for **ordered lists (`1. `)**, **horizontal dividers (`---`)**, and **code blocks (`` ``` ``)**.
+- **Memory Optimized**: Smart History Stack with dynamic byte-size capping prevents browser OOM on massive documents.
 - **Accessibility (A11y)**: WCAG 2.1 compliant with native ARIA tags and keyboard support.
 
 ## 📦 Installation
@@ -84,6 +86,7 @@ const editor = new InkflowEditor({
     lang: 'en-US', // 'en-US' or 'zh-CN'
     placeholder: 'Type...', // Empty state text
     height: '500px', // Optional fixed height
+    size: 'md', // Size variant: 'sm' (small menu and icons), 'md' (medium, default), 'lg' (large)
     theme: inkflowTheme // Optional custom theme classes
 });
 ```

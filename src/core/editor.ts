@@ -25,6 +25,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     private editorAreaEl!: HTMLElement;
     private sourceCodeEl!: HTMLTextAreaElement;
     private resizerOverlayEl!: HTMLElement;
+    private statusBarEl!: HTMLElement;
 
     private isSourceMode: boolean = false;
     private activeResizingImage: HTMLImageElement | null = null;
@@ -32,6 +33,13 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     private history!: HistoryManager;
     private historyTimeout: number | null = null;
     private savedRange: Range | null = null;
+
+    private activeResizerMouseMove: ((e: MouseEvent) => void) | null = null;
+    private activeResizerMouseUp: (() => void) | null = null;
+
+    private resizeListener = () => {
+        if (this.activeResizingImage) this.updateResizerPosition(this.activeResizingImage);
+    };
 
     // ============================================================================
     // Constructor
@@ -81,6 +89,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.createEditorArea();
         this.createSourceArea();
         this.createResizerOverlay();
+        this.createStatusBar();
         
         // Inject the initial HTML
         if (initialHtml) {
@@ -91,12 +100,14 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.wrapperEl.appendChild(this.editorAreaEl);
         this.wrapperEl.appendChild(this.sourceCodeEl);
         this.wrapperEl.appendChild(this.resizerOverlayEl);
+        this.wrapperEl.appendChild(this.statusBarEl);
 
         this.containerEl.innerHTML = '';
         this.containerEl.appendChild(this.wrapperEl);
 
         this.initializeToolbar();
         this.bindEvents();
+        this.updateStatusBar();
 
         // Emit ready event after DOM is fully initialized
         setTimeout(() => this.emit('ready', this), 0);
@@ -105,6 +116,8 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     private createWrapper(): void {
         this.wrapperEl = document.createElement('div');
         this.wrapperEl.className = this.theme.container;
+        const size = this.options.size || 'md';
+        this.wrapperEl.classList.add(`inkflow-size-${size}`);
     }
 
     private createToolbar(): void {
@@ -154,6 +167,27 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.bindResizerEvents();
     }
 
+    private createStatusBar(): void {
+        this.statusBarEl = document.createElement('div');
+        this.statusBarEl.className = 'inkflow-status-bar';
+
+        const modeSpan = document.createElement('span');
+        modeSpan.className = 'inkflow-status-mode';
+        modeSpan.textContent = this.isSourceMode ? 'HTML Source' : 'Visual Editor';
+
+        const statsSpan = document.createElement('span');
+        statsSpan.className = 'inkflow-status-stats';
+        statsSpan.textContent = 'Words: 0 | Characters: 0';
+
+        const statusMsgSpan = document.createElement('span');
+        statusMsgSpan.className = 'inkflow-status-message';
+        statusMsgSpan.textContent = 'Ready';
+
+        this.statusBarEl.appendChild(modeSpan);
+        this.statusBarEl.appendChild(statsSpan);
+        this.statusBarEl.appendChild(statusMsgSpan);
+    }
+
     private bindResizerEvents(): void {
         let isDragging = false;
         let startX = 0;
@@ -186,6 +220,8 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
                 isDragging = false;
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
+                this.activeResizerMouseMove = null;
+                this.activeResizerMouseUp = null;
                 this.saveHistoryNow();
             }
         };
@@ -199,6 +235,8 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
                 startWidth = this.activeResizingImage?.offsetWidth || 0;
                 activeHandle = target.dataset.pos || '';
 
+                this.activeResizerMouseMove = onMouseMove;
+                this.activeResizerMouseUp = onMouseUp;
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);
             }
@@ -285,15 +323,43 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      * Triggers an immediate history snapshot save.
      */
     public saveHistoryNow(): void {
-        const html = this.getHTML();
-        this.history.saveSnapshot(html);
-        this.emit('change', html);
+        const snapshotHtml = this.getSnapshotHTML();
+        this.history.saveSnapshot(snapshotHtml);
+        this.emit('change', this.getHTML());
+        this.updateStatusBar();
+        this.setStatusMessage('Saved');
     }
 
     /**
      * Destroys the editor instance and cleans up the DOM.
      */
     public destroy(): void {
+        // 1. Remove window resize listener
+        window.removeEventListener('resize', this.resizeListener);
+
+        // 2. Remove active resizer drag listeners if drag was in progress
+        if (this.activeResizerMouseMove) {
+            document.removeEventListener('mousemove', this.activeResizerMouseMove);
+        }
+        if (this.activeResizerMouseUp) {
+            document.removeEventListener('mouseup', this.activeResizerMouseUp);
+        }
+
+        // 3. Clear history timeout
+        if (this.historyTimeout) {
+            window.clearTimeout(this.historyTimeout);
+            this.historyTimeout = null;
+        }
+
+        // 4. Destroy the toolbar (clears document-level table picker click listeners)
+        if (this.toolbarInstance) {
+            this.toolbarInstance.destroy();
+        }
+
+        // 5. Unsubscribe all Event Emitter handlers
+        this.clear();
+
+        // 6. Clear container DOM
         this.containerEl.innerHTML = '';
     }
 
@@ -324,9 +390,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.editorAreaEl.addEventListener('scroll', () => {
             if (this.activeResizingImage) this.updateResizerPosition(this.activeResizingImage);
         });
-        window.addEventListener('resize', () => {
-            if (this.activeResizingImage) this.updateResizerPosition(this.activeResizingImage);
-        });
+        window.addEventListener('resize', this.resizeListener);
 
         // Selection tracking
         this.editorAreaEl.addEventListener('keyup', () => this.handleSelectionSave());
@@ -402,8 +466,11 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         ];
         if (!ignoredKeys.includes(e.key)) {
             this.clearImageSelection();
+            this.setStatusMessage('Editing...', 0);
             this.debounceSaveHistory();
         }
+
+        this.updateStatusBar();
 
         if (e.key === ' ' || e.code === 'Space') {
             this.checkMarkdownRules();
@@ -549,6 +616,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             
             this.editorAreaEl.style.display = 'none';
             this.sourceCodeEl.style.display = 'block';
+            this.toolbarInstance.setDisabled(true);
         } else {
             this.editorAreaEl.innerHTML = this.sourceCodeEl.value;
             // Sync height so if user resized source editor, visual editor matches
@@ -556,8 +624,10 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             
             this.sourceCodeEl.style.display = 'none';
             this.editorAreaEl.style.display = 'block';
+            this.toolbarInstance.setDisabled(false);
             this.saveHistoryNow();
         }
+        this.updateStatusBar();
     }
 
     private toggleFullscreen(): void {
@@ -618,16 +688,20 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     private performUndo(): void {
         const prev = this.history.undo();
         if (prev !== null) {
-            this.editorAreaEl.innerHTML = prev;
+            this.restoreSnapshot(prev);
             this.toolbarInstance.updateState();
+            this.updateStatusBar();
+            this.setStatusMessage('Undo');
         }
     }
 
     private performRedo(): void {
         const next = this.history.redo();
         if (next !== null) {
-            this.editorAreaEl.innerHTML = next;
+            this.restoreSnapshot(next);
             this.toolbarInstance.updateState();
+            this.updateStatusBar();
+            this.setStatusMessage('Redo');
         }
     }
 
@@ -711,16 +785,37 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         if (!block || block === this.editorAreaEl) return;
 
         const text = block.textContent || '';
+        const textNormal = text.replace(/\u00A0/g, ' ');
+
+        // Check for horizontal rules (--- or ***)
+        if (textNormal === '---' || textNormal === '--- ' || textNormal === '***' || textNormal === '*** ') {
+            block.textContent = '';
+            this.editorAreaEl.focus();
+            document.execCommand('insertHorizontalRule', false);
+            this.saveHistoryNow();
+            return;
+        }
+
+        // Check for code block (```)
+        if (textNormal === '```' || textNormal === '``` ') {
+            block.textContent = '';
+            this.editorAreaEl.focus();
+            this.insertCodeBlock();
+            return;
+        }
+
         const rules = [
             { prefix: '# ', command: 'formatBlock', value: 'H1' },
             { prefix: '## ', command: 'formatBlock', value: 'H2' },
             { prefix: '### ', command: 'formatBlock', value: 'H3' },
             { prefix: '> ', command: 'formatBlock', value: 'BLOCKQUOTE' },
-            { prefix: '- ', command: 'insertUnorderedList', value: undefined }
+            { prefix: '- ', command: 'insertUnorderedList', value: undefined },
+            { prefix: '* ', command: 'insertUnorderedList', value: undefined },
+            { prefix: '1. ', command: 'insertOrderedList', value: undefined }
         ];
 
         for (const rule of rules) {
-            if (text === rule.prefix || text === rule.prefix.replace(' ', '\u00A0')) {
+            if (textNormal === rule.prefix) {
                 block.textContent = '';
                 this.editorAreaEl.focus();
                 document.execCommand(rule.command, false, rule.value);
@@ -766,11 +861,21 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      * @param html The raw editor HTML.
      * @returns Formatted HTML string.
      */
+    /**
+     * Processes editor HTML to ensure standard tags (e.g., strong instead of b)
+     * and removes empty formatting blocks.
+     * @param html The raw editor HTML.
+     * @returns Formatted HTML string.
+     */
     private formatOutputHTML(html: string): string {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         const body = doc.body;
 
+        // 1. Strip history bookmarks that might leak into the output
+        body.querySelectorAll('.inkflow-bookmark').forEach(el => el.remove());
+
+        // 2. Standardize tags
         body.querySelectorAll('b').forEach(b => {
             const strong = document.createElement('strong');
             strong.innerHTML = b.innerHTML;
@@ -783,24 +888,155 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             i.replaceWith(em);
         });
 
-        let foundEmpty = true;
-        const blockTags = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote'];
-
-        while (foundEmpty) {
-            foundEmpty = false;
-            const allElements = body.querySelectorAll('*');
-            for (let i = 0; i < allElements.length; i++) {
-                const el = allElements[i];
-                if (blockTags.includes(el.tagName.toLowerCase())) {
-                    const hasImg = el.querySelector('img') !== null;
-                    const isJustBr = el.innerHTML.trim().toLowerCase() === '<br>';
-                    if (!hasImg && ((el.textContent || '').trim() === '' || isJustBr)) {
+        // 3. Purge empty inline styling junk tags (e.g. empty strong or em left by browsers)
+        const inlineFormattingTags = ['strong', 'em', 'u', 'span', 'code', 'del', 'a'];
+        let foundEmptyInline = true;
+        while (foundEmptyInline) {
+            foundEmptyInline = false;
+            const elements = body.querySelectorAll('*');
+            for (let i = 0; i < elements.length; i++) {
+                const el = elements[i];
+                const tagName = el.tagName.toLowerCase();
+                if (inlineFormattingTags.includes(tagName)) {
+                    if (el.childNodes.length === 0 || el.innerHTML.trim() === '') {
                         el.remove();
-                        foundEmpty = true;
+                        foundEmptyInline = true;
+                        break;
                     }
                 }
             }
         }
+
         return body.innerHTML === '<br>' ? '' : body.innerHTML;
+    }
+
+    // ============================================================================
+    // Caret Preservation & Bookmark Snapshots
+    // ============================================================================
+    /**
+     * Gets the HTML of the editor with temporary selection bookmark nodes injected.
+     */
+    private getSnapshotHTML(): string {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || !this.editorAreaEl.contains(sel.anchorNode)) {
+            return this.editorAreaEl.innerHTML;
+        }
+
+        const range = sel.getRangeAt(0);
+        
+        const startBookmark = document.createElement('span');
+        startBookmark.className = 'inkflow-bookmark';
+        startBookmark.id = 'inkflow-bookmark-start';
+        startBookmark.style.display = 'none';
+        
+        const endBookmark = document.createElement('span');
+        endBookmark.className = 'inkflow-bookmark';
+        endBookmark.id = 'inkflow-bookmark-end';
+        endBookmark.style.display = 'none';
+
+        try {
+            // End bookmark inserted first to avoid offset shifting
+            const endRange = range.cloneRange();
+            endRange.collapse(false);
+            endRange.insertNode(endBookmark);
+
+            const startRange = range.cloneRange();
+            startRange.collapse(true);
+            startRange.insertNode(startBookmark);
+        } catch (e) {
+            // Fallback if insertion fails in edge cases (e.g. read-only elements)
+            return this.editorAreaEl.innerHTML;
+        }
+
+        const html = this.editorAreaEl.innerHTML;
+
+        // Clean up bookmark nodes from the live DOM immediately
+        startBookmark.remove();
+        endBookmark.remove();
+        this.editorAreaEl.normalize();
+
+        return html;
+    }
+
+    /**
+     * Sets the HTML of the editor and restores caret selection from bookmarked tags.
+     */
+    private restoreSnapshot(html: string): void {
+        this.editorAreaEl.innerHTML = html;
+
+        const startBookmark = this.editorAreaEl.querySelector('#inkflow-bookmark-start');
+        const endBookmark = this.editorAreaEl.querySelector('#inkflow-bookmark-end');
+
+        if (startBookmark && endBookmark) {
+            const range = document.createRange();
+            
+            try {
+                range.setStartAfter(startBookmark);
+                range.setEndBefore(endBookmark);
+
+                startBookmark.remove();
+                endBookmark.remove();
+
+                const sel = window.getSelection();
+                if (sel) {
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+            } catch (e) {
+                // Fallback cleanup if range building fails
+                if (startBookmark) startBookmark.remove();
+                if (endBookmark) endBookmark.remove();
+            }
+        } else {
+            if (startBookmark) startBookmark.remove();
+            if (endBookmark) endBookmark.remove();
+        }
+
+        this.editorAreaEl.normalize();
+        this.editorAreaEl.focus();
+    }
+
+    // ============================================================================
+    // Status Bar & Metrics Helpers
+    // ============================================================================
+    /**
+     * Updates word and character counts in the status bar.
+     */
+    private updateStatusBar(): void {
+        if (!this.statusBarEl) return;
+
+        const modeEl = this.statusBarEl.querySelector('.inkflow-status-mode');
+        const statsEl = this.statusBarEl.querySelector('.inkflow-status-stats');
+
+        if (modeEl) {
+            modeEl.textContent = this.isSourceMode ? 'HTML Source' : 'Visual Editor';
+        }
+
+        if (statsEl) {
+            const text = this.getText();
+            const charCount = text.length;
+            const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+            statsEl.textContent = `Words: ${wordCount} | Characters: ${charCount}`;
+        }
+    }
+
+    /**
+     * Briefly flashes a message inside the status bar (e.g. "Saved").
+     */
+    private setStatusMessage(msg: string, duration: number = 1500): void {
+        if (!this.statusBarEl) return;
+        const msgEl = this.statusBarEl.querySelector('.inkflow-status-message');
+        if (msgEl) {
+            msgEl.textContent = msg;
+            msgEl.classList.add('is-active');
+            if (duration > 0) {
+                setTimeout(() => {
+                    if (msgEl && msgEl.textContent === msg) {
+                        msgEl.textContent = 'Ready';
+                        msgEl.classList.remove('is-active');
+                    }
+                }, duration);
+            }
+        }
     }
 }

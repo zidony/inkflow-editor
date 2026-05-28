@@ -18,6 +18,7 @@ export class Toolbar {
 
     private buttonElements: Map<string, HTMLButtonElement | HTMLElement> = new Map();
     private headingSelectEl: HTMLSelectElement | null = null;
+    private cleanupFnList: Array<() => void> = [];
 
     // ============================================================================
     // Constructor
@@ -419,11 +420,60 @@ export class Toolbar {
             btnEl.setAttribute('aria-expanded', (!isVisible).toString());
         });
 
-        document.addEventListener('click', e => {
+        const docClickListener = (e: MouseEvent) => {
             if (!wrapper.contains(e.target as Node)) {
                 pickerEl.classList.remove('is-visible');
                 btnEl.setAttribute('aria-expanded', 'false');
             }
+        };
+
+        document.addEventListener('click', docClickListener);
+        this.cleanupFnList.push(() => {
+            document.removeEventListener('click', docClickListener);
         });
+    }
+
+    /**
+     * Toggles the disabled state of rich-text buttons and select elements.
+     * Keeps sourceCode and fullscreen buttons enabled.
+     */
+    public setDisabled(disabled: boolean): void {
+        this.buttonElements.forEach((btnEl, btnName) => {
+            if (btnName !== 'sourceCode' && btnName !== 'fullscreen') {
+                if (btnEl instanceof HTMLButtonElement) {
+                    btnEl.disabled = disabled;
+                } else {
+                    // For wrapper elements
+                    btnEl.style.pointerEvents = disabled ? 'none' : 'auto';
+                }
+
+                if (disabled) {
+                    btnEl.classList.add('is-disabled');
+                    btnEl.setAttribute('aria-disabled', 'true');
+                } else {
+                    btnEl.classList.remove('is-disabled');
+                    btnEl.setAttribute('aria-disabled', 'false');
+                }
+            }
+        });
+
+        if (this.headingSelectEl) {
+            this.headingSelectEl.disabled = disabled;
+            if (disabled) {
+                this.headingSelectEl.classList.add('is-disabled');
+            } else {
+                this.headingSelectEl.classList.remove('is-disabled');
+            }
+        }
+    }
+
+    /**
+     * Cleans up all document-level event listeners.
+     */
+    public destroy(): void {
+        this.cleanupFnList.forEach(fn => fn());
+        this.cleanupFnList = [];
+        this.buttonElements.clear();
+        this.container.innerHTML = '';
     }
 }

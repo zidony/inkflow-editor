@@ -4,55 +4,83 @@
    DESIGN SYSTEM & CSS CUSTOM PROPERTIES (Variables)
    ============================================================ */
 :root {
-    /* Primary Brand Colors */
-    --inkflow-primary: #2563eb; /* Active icons, borders */
-    --inkflow-primary-light: #dbeafe; /* Active button background */
-    --inkflow-primary-alpha: rgba(37, 99, 235, 0.25); /* Focus rings */
+    /* Primary Brand Palette (Harmonious & Professional) */
+    --inkflow-primary: #3b82f6; /* Modern Blue */
+    --inkflow-primary-hover: #2563eb;
+    --inkflow-primary-light: #eff6ff; /* Active background */
+    --inkflow-primary-alpha: rgba(59, 130, 246, 0.15); /* Focus rings and selection */
+    --inkflow-success: #10b981; /* Status green */
+    --inkflow-success-light: #ecfdf5;
 
     /* Grayscale & Backgrounds */
     --inkflow-bg-main: #ffffff; /* Editor body background */
-    --inkflow-bg-toolbar: #f9fafb; /* Toolbar background */
-    --inkflow-bg-hover: #f3f4f6; /* Button hover background */
-    --inkflow-border: #e5e7eb; /* Toolbar and editor borders */
+    --inkflow-bg-toolbar: #f8fafc; /* Sleek light gray slate */
+    --inkflow-bg-hover: #f1f5f9; /* Button hover background */
+    --inkflow-border: #e2e8f0; /* Soft border color */
+    --inkflow-border-focus: #94a3b8;
 
     /* Text Colors */
-    --inkflow-text-main: #374151; /* Primary text */
-    --inkflow-text-muted: #6b7280; /* Icons and secondary text */
+    --inkflow-text-main: #1e293b; /* Premium slate dark */
+    --inkflow-text-muted: #64748b; /* Secondary slate */
+    --inkflow-text-light: #94a3b8;
 
-    /* Source Code Mode (Light Gray Theme) */
-    --inkflow-bg-source: #f3f4f6; /* More distinct light gray */
-    --inkflow-text-source: #1f2937;
+    /* Source Code Mode (Subtle Dark Monospaced Code Theme) */
+    --inkflow-bg-source: #0f172a; /* Slate 900 for modern code look */
+    --inkflow-text-source: #e2e8f0;
+    --inkflow-border-source: #1e293b;
 
-    /* Focus & Layout */
+    /* Focus, Radius & Shadow Tokens */
     --inkflow-focus-ring: 0 0 0 3px var(--inkflow-primary-alpha);
-    --inkflow-radius: 8px;
+    --inkflow-radius: 12px; /* Smoother, more modern rounded corners */
+    --inkflow-radius-inner: 8px;
+    --inkflow-shadow-dropdown: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
 
     /* Typography */
-    --inkflow-font-sans:
-        system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --inkflow-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --inkflow-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --inkflow-font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, Consolas, monospace;
 }
 
 /* ============================================================
-   EDITOR CORE STYLES
+   CONTAINER & WRAPPER
+   ============================================================ */
+.inkflow-container {
+    position: relative;
+    border: 1px solid var(--inkflow-border);
+    border-radius: var(--inkflow-radius);
+    background: var(--inkflow-bg-main);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: var(--inkflow-font-sans);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.inkflow-container:focus-within {
+    border-color: var(--inkflow-primary);
+    box-shadow: var(--inkflow-focus-ring);
+}
+
+/* ============================================================
+   TOOLBAR STYLES
    ============================================================ */
 .inkflow-toolbar {
     background: var(--inkflow-bg-toolbar);
-    border: 1.5px solid var(--inkflow-border);
-    border-bottom: none;
-    border-radius: var(--inkflow-radius) var(--inkflow-radius) 0 0;
-    padding: 8px 10px;
+    border-bottom: 1px solid var(--inkflow-border);
+    padding: 8px 12px;
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
     flex-wrap: wrap;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .inkflow-toolbar .inkflow-toolbar-group {
     display: flex;
     align-items: center;
-    gap: 1px;
-    padding: 0 6px;
+    gap: 2px;
+    padding: 2px 6px;
     border-right: 1px solid var(--inkflow-border);
 }
 
@@ -60,21 +88,19 @@
     border-right: none;
 }
 
+/* Custom button styles */
 .inkflow-btn {
-    width: 30px;
-    height: 28px;
+    width: 32px;
+    height: 30px;
     border: none;
     background: transparent;
-    border-radius: 5px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     color: var(--inkflow-text-muted);
-    font-size: 0.85rem;
-    transition:
-        background 0.12s,
-        color 0.12s;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
 .inkflow-btn:hover {
@@ -82,39 +108,59 @@
     color: var(--inkflow-text-main);
 }
 
+.inkflow-btn:active {
+    transform: scale(0.96);
+}
+
 .inkflow-btn.is-active,
 .inkflow-btn[aria-pressed='true'] {
     background: var(--inkflow-primary-light);
     color: var(--inkflow-primary);
+    font-weight: 600;
 }
 
+/* Heading Dropdown */
 .inkflow-select {
-    border: none;
+    border: 1px solid transparent;
     background: transparent;
     font-family: var(--inkflow-font-sans);
     font-size: 0.85rem;
+    font-weight: 500;
     color: var(--inkflow-text-main);
-    height: 28px;
-    padding: 0 4px;
+    height: 30px;
+    padding: 0 6px;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 6px;
     outline: none;
-    transition: background 0.12s;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .inkflow-select:hover {
     background: var(--inkflow-bg-hover);
 }
 
+.inkflow-select:focus {
+    border-color: var(--inkflow-primary);
+}
+
+/* Disabled State Visuals */
+.inkflow-btn.is-disabled,
+.inkflow-select.is-disabled,
+.inkflow-btn:disabled {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+/* ============================================================
+   EDITOR BODY AREA (Visual Editing)
+   ============================================================ */
 .inkflow-editor-body {
-    border: 1.5px solid var(--inkflow-border);
-    border-top: none;
-    border-radius: 0 0 var(--inkflow-radius) var(--inkflow-radius);
-    min-height: 360px;
-    padding: 16px;
+    min-height: 380px;
+    padding: 24px;
     background: var(--inkflow-bg-main);
-    font-size: 0.875rem;
-    line-height: 1.7;
+    font-size: 0.95rem;
+    line-height: 1.75;
     color: var(--inkflow-text-main);
     cursor: text;
     word-wrap: break-word;
@@ -124,107 +170,176 @@
     overflow-x: hidden;
     resize: vertical;
     box-sizing: border-box;
-}
-
-.inkflow-editor-body:focus {
     outline: none;
-    border-color: var(--inkflow-primary);
-    box-shadow: var(--inkflow-focus-ring);
 }
 
-/* Prevent media/table/code from exceeding editor width */
-.inkflow-editor-body img,
-.inkflow-editor-body video,
-.inkflow-editor-body iframe {
-    max-width: 100% !important;
-    height: auto !important;
+/* Custom Scrollbars */
+.inkflow-editor-body::-webkit-scrollbar,
+.inkflow-source-area::-webkit-scrollbar {
+    width: 8px;
+}
+.inkflow-editor-body::-webkit-scrollbar-thumb,
+.inkflow-source-area::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
     border-radius: 4px;
 }
-
-.inkflow-editor-body img {
-    cursor: pointer;
-    transition: outline 0.15s ease, box-shadow 0.15s ease;
+.inkflow-editor-body::-webkit-scrollbar-track,
+.inkflow-source-area::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-.inkflow-editor-body img.is-selected {
-    outline: 2px solid var(--inkflow-primary);
-    box-shadow: 0 0 0 4px var(--inkflow-primary-alpha);
+/* Styling native elements in editor */
+.inkflow-editor-body h1,
+.inkflow-editor-body h2,
+.inkflow-editor-body h3 {
+    color: var(--inkflow-text-main);
+    margin-top: 1.6rem;
+    margin-bottom: 0.8rem;
+    font-weight: 700;
+    line-height: 1.3;
 }
 
-.inkflow-editor-body table {
-    width: 100%;
-    max-width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-    margin-bottom: 1rem;
-    background-color: var(--inkflow-bg-main);
+.inkflow-editor-body h1 { font-size: 1.8rem; }
+.inkflow-editor-body h2 { font-size: 1.45rem; }
+.inkflow-editor-body h3 { font-size: 1.2rem; }
+
+.inkflow-editor-body p {
+    margin-top: 0;
+    margin-bottom: 1.2rem;
 }
 
-.inkflow-editor-body td,
-.inkflow-editor-body th {
-    border: 1px solid var(--inkflow-border);
-    padding: 10px 14px;
-    min-width: 1em;
-    vertical-align: top;
-    word-break: break-all;
-}
-
-.inkflow-editor-body td:hover {
-    background-color: var(--inkflow-bg-hover);
+/* Inline Code & Code Block */
+.inkflow-editor-body code {
+    background: var(--inkflow-bg-hover);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    font-family: var(--inkflow-font-mono);
+    color: #e11d48; /* Premium Rose Red for inline code */
 }
 
 .inkflow-editor-body pre {
-    white-space: pre;
-    overflow-x: auto;
-    background: var(--inkflow-bg-toolbar);
+    background: #f8fafc;
     border: 1px solid var(--inkflow-border);
-    border-radius: 6px;
-    padding: 12px 14px;
-    font-size: 0.82rem;
-}
-
-.inkflow-editor-body code {
-    background: var(--inkflow-bg-hover);
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-size: 0.83em;
-    font-family: var(--inkflow-font-mono);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 1.2rem;
+    overflow-x: auto;
+    font-size: 0.88rem;
 }
 
 .inkflow-editor-body pre code {
     background: transparent;
     padding: 0;
     font-size: inherit;
+    color: #334155;
     white-space: pre;
-    overflow-x: auto;
     display: block;
 }
 
+/* Blockquote */
+.inkflow-editor-body blockquote {
+    border-left: 4px solid var(--inkflow-primary);
+    padding-left: 16px;
+    margin: 0 0 1.2rem 0;
+    color: var(--inkflow-text-muted);
+    font-style: italic;
+    background-color: var(--inkflow-primary-light);
+    padding-top: 8px;
+    padding-bottom: 8px;
+    border-radius: 0 6px 6px 0;
+}
+
+/* Unordered & Ordered Lists */
+.inkflow-editor-body ul,
+.inkflow-editor-body ol {
+    margin-top: 0;
+    margin-bottom: 1.2rem;
+    padding-left: 24px;
+}
+
+.inkflow-editor-body li {
+    margin-bottom: 0.4rem;
+}
+
+/* Horizontal Divider */
+.inkflow-editor-body hr {
+    border: 0;
+    height: 1px;
+    background: var(--inkflow-border);
+    margin: 2rem 0;
+}
+
+/* Tables */
+.inkflow-editor-body table {
+    width: 100%;
+    max-width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.2rem;
+    background-color: var(--inkflow-bg-main);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.inkflow-editor-body td,
+.inkflow-editor-body th {
+    border: 1px solid var(--inkflow-border);
+    padding: 12px 16px;
+    min-width: 1em;
+    vertical-align: top;
+    font-size: 0.9rem;
+}
+
+.inkflow-editor-body th {
+    background-color: var(--inkflow-bg-toolbar);
+    font-weight: 600;
+    color: var(--inkflow-text-main);
+}
+
+.inkflow-editor-body tr:hover td {
+    background-color: var(--inkflow-bg-hover);
+}
+
+/* Images & Video Selection outline */
+.inkflow-editor-body img,
+.inkflow-editor-body video,
+.inkflow-editor-body iframe {
+    max-width: 100% !important;
+    border-radius: 6px;
+    transition: outline 0.15s ease, box-shadow 0.15s ease;
+}
+
+.inkflow-editor-body img {
+    cursor: pointer;
+}
+
+.inkflow-editor-body img.is-selected {
+    outline: 3px solid var(--inkflow-primary);
+    box-shadow: 0 0 0 5px var(--inkflow-primary-alpha);
+}
+
 /* ============================================================
-   SOURCE CODE MODE (Dark Mode Environment)
+   SOURCE CODE EDITOR MODE
    ============================================================ */
 .inkflow-source-area {
     background-color: var(--inkflow-bg-source) !important;
     color: var(--inkflow-text-source) !important;
     font-family: var(--inkflow-font-mono);
-    padding: 16px;
-    border: 1.5px solid var(--inkflow-border);
-    border-top: none;
-    border-radius: 0 0 var(--inkflow-radius) var(--inkflow-radius);
+    font-size: 0.9rem;
+    padding: 24px;
+    border: none;
     width: 100%;
+    min-height: 380px;
     resize: vertical;
     outline: none;
     box-sizing: border-box;
     line-height: 1.6;
-}
-
-.inkflow-source-area:focus {
-    border-color: var(--inkflow-primary);
-    box-shadow: inset var(--inkflow-focus-ring);
+    display: none;
 }
 
 /* ============================================================
-   TABLE PICKER DROPDOWN
+   TABLE PICKER SYSTEM
    ============================================================ */
 .inkflow-table-btn-wrapper {
     position: relative;
@@ -238,12 +353,13 @@
     z-index: 1000;
     background: var(--inkflow-bg-main);
     border: 1px solid var(--inkflow-border);
-    border-radius: 6px;
-    padding: 10px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: var(--inkflow-shadow-dropdown);
     display: none;
     flex-direction: column;
-    margin-top: 4px;
+    margin-top: 6px;
+    animation: inkflow-dropdown-scale 0.15s ease-out;
 }
 
 .inkflow-table-picker.is-visible {
@@ -252,15 +368,17 @@
 
 .inkflow-table-picker-grid {
     display: grid;
-    grid-template-columns: repeat(10, 16px);
-    grid-template-rows: repeat(10, 16px);
-    gap: 2px;
+    grid-template-columns: repeat(10, 18px);
+    grid-template-rows: repeat(10, 18px);
+    gap: 3px;
 }
 
 .inkflow-table-picker-cell {
     border: 1px solid var(--inkflow-border);
-    background: var(--inkflow-bg-main);
+    background: #f8fafc;
+    border-radius: 2px;
     cursor: pointer;
+    transition: background 0.1s, border-color 0.1s;
 }
 
 .inkflow-table-picker-cell.is-hovered {
@@ -270,14 +388,74 @@
 
 .inkflow-table-picker-label {
     text-align: center;
-    font-size: 13px;
-    margin-top: 8px;
-    color: var(--inkflow-text-muted);
-    font-family: var(--inkflow-font-sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 10px;
+    color: var(--inkflow-primary);
+}
+
+@keyframes inkflow-dropdown-scale {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
 
 /* ============================================================
-   FULLSCREEN MODE
+   BOTTOM STATUS BAR (Premium Component)
+   ============================================================ */
+.inkflow-status-bar {
+    background: var(--inkflow-bg-toolbar);
+    border-top: 1px solid var(--inkflow-border);
+    padding: 6px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--inkflow-text-muted);
+    font-weight: 500;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.inkflow-status-mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--inkflow-primary);
+    font-weight: 600;
+}
+
+.inkflow-status-mode::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background-color: var(--inkflow-primary);
+    border-radius: 50%;
+}
+
+.inkflow-status-stats {
+    letter-spacing: 0.025em;
+}
+
+.inkflow-status-message {
+    color: var(--inkflow-text-light);
+    transition: color 0.2s ease;
+    font-weight: 600;
+}
+
+.inkflow-status-message.is-active {
+    color: var(--inkflow-success);
+    animation: inkflow-success-glow 0.8s ease;
+}
+
+@keyframes inkflow-success-glow {
+    0% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+/* ============================================================
+   FULLSCREEN MODE (Premium Transition Layout)
    ============================================================ */
 .inkflow-container.is-fullscreen {
     position: fixed !important;
@@ -292,6 +470,7 @@
     margin: 0 !important;
     padding: 0 !important;
     border-radius: 0 !important;
+    border: none !important;
 }
 
 .inkflow-container.is-fullscreen .inkflow-editor-body,
@@ -303,21 +482,50 @@
 }
 
 /* ============================================================
-   SKELETON LOADERS
+   IMAGE RESIZER OVERLAY
    ============================================================ */
+.inkflow-image-resizer {
+    position: absolute;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.inkflow-resizer-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #ffffff;
+    border: 2px solid var(--inkflow-primary);
+    border-radius: 50%;
+    pointer-events: auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transform: translate(-50%, -50%);
+    transition: transform 0.12s ease, background-color 0.12s ease;
+}
+
+.inkflow-resizer-handle:hover {
+    transform: translate(-50%, -50%) scale(1.3);
+    background-color: var(--inkflow-primary);
+}
+
+.inkflow-resizer-handle.nw { top: 0; left: 0; cursor: nwse-resize; }
+.inkflow-resizer-handle.ne { top: 0; left: 100%; cursor: nesw-resize; }
+.inkflow-resizer-handle.sw { top: 100%; left: 0; cursor: nesw-resize; }
+.inkflow-resizer-handle.se { top: 100%; left: 100%; cursor: nwse-resize; }
+
+/* Pulse skeleton loader for uploading */
 .inkflow-img-skeleton {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--inkflow-bg-toolbar);
-    border: 1px dashed var(--inkflow-border);
+    background-color: #f1f5f9;
+    border: 2px dashed #cbd5e1;
     color: var(--inkflow-text-muted);
-    border-radius: var(--inkflow-radius);
-    padding: 20px;
-    margin: 5px;
+    border-radius: 8px;
+    padding: 16px 24px;
+    margin: 8px;
     font-size: 0.85rem;
-    font-family: var(--inkflow-font-sans);
-    min-width: 150px;
+    font-weight: 500;
     animation: inkflow-pulse 1.5s infinite ease-in-out;
     user-select: none;
     -webkit-user-select: none;
@@ -325,38 +533,80 @@
 
 @keyframes inkflow-pulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    50% { opacity: 0.55; }
 }
 
 /* ============================================================
-   IMAGE RESIZER OVERLAY (Drag to Resize)
+   SIZE VARIANTS (sm / md / lg)
    ============================================================ */
-.inkflow-container {
-    position: relative; /* Crucial for absolute overlay */
+/* Small Size (sm) Variant */
+.inkflow-size-sm .inkflow-toolbar {
+    padding: 4px 8px;
+    gap: 2px;
 }
 
-.inkflow-image-resizer {
-    position: absolute;
-    z-index: 100;
-    pointer-events: none; /* Let clicks pass through to the image below */
-    /* Remove outline/box-shadow from the img and put it here if we want,
-       but usually we just use the handlers. */
+.inkflow-size-sm .inkflow-toolbar .inkflow-toolbar-group {
+    padding: 0 4px;
 }
 
-.inkflow-resizer-handle {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    background-color: #ffffff;
-    border: 2px solid var(--inkflow-primary);
-    border-radius: 50%;
-    pointer-events: auto; /* Important: allow grabbing the handles */
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    /* Centers the handle on its corner */
-    transform: translate(-50%, -50%);
+.inkflow-size-sm .inkflow-btn {
+    width: 26px;
+    height: 24px;
+    font-size: 0.75rem; /* Automatically scales 1.2em SVG icons perfectly to 14.4px */
+    border-radius: 4px;
 }
 
-.inkflow-resizer-handle.nw { top: 0; left: 0; cursor: nwse-resize; }
-.inkflow-resizer-handle.ne { top: 0; left: 100%; cursor: nesw-resize; }
-.inkflow-resizer-handle.sw { top: 100%; left: 0; cursor: nesw-resize; }
-.inkflow-resizer-handle.se { top: 100%; left: 100%; cursor: nwse-resize; }
+.inkflow-size-sm .inkflow-select {
+    height: 24px;
+    font-size: 0.75rem;
+    padding: 0 2px;
+    border-radius: 4px;
+}
+
+.inkflow-size-sm .inkflow-editor-body,
+.inkflow-size-sm .inkflow-source-area {
+    min-height: 280px;
+    padding: 16px;
+    font-size: 0.875rem;
+}
+
+.inkflow-size-sm .inkflow-status-bar {
+    padding: 4px 12px;
+    font-size: 0.7rem;
+}
+
+/* Large Size (lg) Variant */
+.inkflow-size-lg .inkflow-toolbar {
+    padding: 12px 16px;
+    gap: 6px;
+}
+
+.inkflow-size-lg .inkflow-toolbar .inkflow-toolbar-group {
+    padding: 4px 8px;
+}
+
+.inkflow-size-lg .inkflow-btn {
+    width: 38px;
+    height: 36px;
+    font-size: 1rem; /* Automatically scales 1.2em SVG icons perfectly to 19.2px */
+    border-radius: 8px;
+}
+
+.inkflow-size-lg .inkflow-select {
+    height: 36px;
+    font-size: 0.95rem;
+    padding: 0 8px;
+    border-radius: 8px;
+}
+
+.inkflow-size-lg .inkflow-editor-body,
+.inkflow-size-lg .inkflow-source-area {
+    min-height: 480px;
+    padding: 32px;
+    font-size: 1.05rem;
+}
+
+.inkflow-size-lg .inkflow-status-bar {
+    padding: 8px 20px;
+    font-size: 0.8rem;
+}

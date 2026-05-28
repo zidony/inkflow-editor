@@ -9,6 +9,7 @@ const editor = new InkflowEditor({
     container: '.inkflow-editor',
     theme: 'inkflow',
     lang: 'en-US',
+    size: 'sm', // Small size variants for toolbar and icons
     placeholder: 'Start writing in inkflow-editor...',
 
     hooks: {
