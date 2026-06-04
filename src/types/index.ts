@@ -3,6 +3,7 @@
  */
 export interface LocaleDict {
     toolbar: Record<string, string>;
+    emojiCategories?: Record<string, string>;
     prompts: {
         linkUrl: string;
         imageUrl: string;

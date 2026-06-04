@@ -51,7 +51,6 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
     font-family: var(--inkflow-font-sans);
     transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -67,6 +66,8 @@
 .inkflow-toolbar {
     background: var(--inkflow-bg-toolbar);
     border-bottom: 1px solid var(--inkflow-border);
+    border-top-left-radius: calc(var(--inkflow-radius) - 1px);
+    border-top-right-radius: calc(var(--inkflow-radius) - 1px);
     padding: 8px 12px;
     display: flex;
     align-items: center;
@@ -175,16 +176,19 @@
 
 /* Custom Scrollbars */
 .inkflow-editor-body::-webkit-scrollbar,
-.inkflow-source-area::-webkit-scrollbar {
+.inkflow-source-area::-webkit-scrollbar,
+.inkflow-emoji-content::-webkit-scrollbar {
     width: 8px;
 }
 .inkflow-editor-body::-webkit-scrollbar-thumb,
-.inkflow-source-area::-webkit-scrollbar-thumb {
+.inkflow-source-area::-webkit-scrollbar-thumb,
+.inkflow-emoji-content::-webkit-scrollbar-thumb {
     background-color: #cbd5e1;
     border-radius: 4px;
 }
 .inkflow-editor-body::-webkit-scrollbar-track,
-.inkflow-source-area::-webkit-scrollbar-track {
+.inkflow-source-area::-webkit-scrollbar-track,
+.inkflow-emoji-content::-webkit-scrollbar-track {
     background: transparent;
 }
 
@@ -405,6 +409,8 @@
 .inkflow-status-bar {
     background: var(--inkflow-bg-toolbar);
     border-top: 1px solid var(--inkflow-border);
+    border-bottom-left-radius: calc(var(--inkflow-radius) - 1px);
+    border-bottom-right-radius: calc(var(--inkflow-radius) - 1px);
     padding: 6px 16px;
     display: flex;
     align-items: center;
@@ -609,4 +615,153 @@
 .inkflow-size-lg .inkflow-status-bar {
     padding: 8px 20px;
     font-size: 0.8rem;
+}
+
+/* ============================================================
+   EMOJI PICKER PLUGIN
+   ============================================================ */
+.inkflow-emoji-btn-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.inkflow-emoji-picker {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: -120px;
+    right: auto;
+    width: 280px;
+    max-height: 240px;
+    background: var(--inkflow-bg-main);
+    border: 1px solid var(--inkflow-border);
+    border-radius: var(--inkflow-radius-inner);
+    box-shadow: var(--inkflow-shadow-dropdown);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+}
+
+.inkflow-emoji-picker.is-visible {
+    display: flex;
+}
+
+.inkflow-emoji-tabs {
+    display: flex;
+    flex-shrink: 0;
+    background: var(--inkflow-bg-toolbar);
+    border-bottom: 1px solid var(--inkflow-border);
+    border-top-left-radius: calc(var(--inkflow-radius-inner) - 1px);
+    border-top-right-radius: calc(var(--inkflow-radius-inner) - 1px);
+    overflow-x: auto;
+}
+
+.inkflow-emoji-tabs::-webkit-scrollbar {
+    height: 0;
+    width: 0;
+}
+
+.inkflow-emoji-tab {
+    flex: none;
+    background: transparent;
+    border: none;
+    padding: 8px 6px 3px 6px;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    font-weight: 500;
+    color: var(--inkflow-text-muted);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.15s ease;
+}
+
+.inkflow-emoji-tab::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 4px;
+    right: 4px;
+    height: 2px;
+    background-color: transparent;
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+    transition: background-color 0.15s ease;
+}
+
+.inkflow-emoji-tab:hover {
+    color: var(--inkflow-text-main);
+}
+
+.inkflow-emoji-tab.is-active {
+    color: var(--inkflow-primary);
+    font-weight: 600;
+}
+
+.inkflow-emoji-tab.is-active::after {
+    background-color: var(--inkflow-primary);
+}
+
+.inkflow-emoji-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px;
+}
+
+.inkflow-emoji-category-panel {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+}
+
+.inkflow-emoji-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.inkflow-emoji-btn img {
+    width: 1.2em;
+    height: 1.2em;
+    pointer-events: none;
+}
+
+.inkflow-emoji-btn:hover {
+    background: var(--inkflow-bg-hover);
+    transform: scale(1.15);
+}
+
+.inkflow-emoji-btn:active {
+    transform: scale(0.95);
+}
+
+/* Mobile Modal view for emoji picker */
+@media (max-width: 640px) {
+    .inkflow-emoji-picker {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        right: auto !important;
+        bottom: auto !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 999999 !important;
+        width: 300px !important;
+        max-width: 90vw !important;
+        box-shadow: 0 0 0 100vw rgba(0, 0, 0, 0.4), var(--inkflow-shadow-dropdown) !important;
+    }
+}
+
+/* In-Editor SVG Emoji Styling */
+.inkflow-editor-body img.inkflow-emoji {
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: -0.2em;
+    margin: 0 0.05em;
+    display: inline-block;
 }

@@ -4,6 +4,7 @@ import { inkflowTheme } from '../themes/inkflow';
 import { HistoryManager } from './history';
 import { enUS } from '../locales/en-US';
 import { zhCN } from '../locales/zh-CN';
+import { parseEmojisToHTML } from '../ui/emojis';
 
 import { EventEmitter } from './emitter';
 
@@ -273,7 +274,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             ['bold', 'italic', 'underline', 'strike', 'inlineCode', 'eraser'],
             ['alignLeft', 'alignCenter', 'alignRight'],
             ['listUl', 'listOl'],
-            ['link', 'image', 'video', 'codeBlock', 'blockquote', 'table', 'divider'],
+            ['link', 'image', 'video', 'codeBlock', 'blockquote', 'table', 'divider', 'emoji'],
             ['undo', 'redo'],
             ['sourceCode', 'fullscreen']
         ];
@@ -315,7 +316,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      * @param html The HTML string to inject.
      */
     public setHTML(html: string): void {
-        this.editorAreaEl.innerHTML = html;
+        this.editorAreaEl.innerHTML = parseEmojisToHTML(html);
         this.saveHistoryNow();
     }
 
@@ -377,7 +378,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         // Image selection
         this.editorAreaEl.addEventListener('click', (e: MouseEvent) => {
             const target = e.target as HTMLElement;
-            if (target.tagName.toLowerCase() === 'img') {
+            if (target.tagName.toLowerCase() === 'img' && !target.classList.contains('inkflow-emoji')) {
                 this.clearImageSelection();
                 target.classList.add('is-selected');
                 this.updateResizerPosition(target as HTMLImageElement);
@@ -396,6 +397,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.editorAreaEl.addEventListener('keyup', () => this.handleSelectionSave());
         this.editorAreaEl.addEventListener('mouseup', () => this.handleSelectionSave());
         this.editorAreaEl.addEventListener('focusout', () => this.handleSelectionSave());
+        this.editorAreaEl.addEventListener('copy', (e) => this.handleCopyEvent(e as ClipboardEvent));
 
         // Keyboard & State tracking
         this.editorAreaEl.addEventListener('mouseup', () => this.toolbarInstance.updateState());
@@ -526,6 +528,30 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.saveHistoryNow();
     }
 
+    private handleCopyEvent(e: ClipboardEvent): void {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+
+        const container = document.createElement('div');
+        for (let i = 0; i < sel.rangeCount; i++) {
+            container.appendChild(sel.getRangeAt(i).cloneContents());
+        }
+
+        container.querySelectorAll('img.inkflow-emoji').forEach(img => {
+            const altText = img.getAttribute('alt');
+            if (altText) {
+                const textNode = document.createTextNode(altText);
+                img.replaceWith(textNode);
+            }
+        });
+
+        if (e.clipboardData) {
+            e.preventDefault();
+            e.clipboardData.setData('text/html', container.innerHTML);
+            e.clipboardData.setData('text/plain', container.innerText);
+        }
+    }
+
     private handleDropEvent(e: DragEvent): void {
         if (!this.options.hooks?.onUploadImage || !e.dataTransfer) return;
         
@@ -599,6 +625,17 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
                 break;
             case 'table':
                 this.insertTable(detail.rows, detail.cols);
+                break;
+            case 'emoji':
+                if (detail.value) {
+                    if (detail.src) {
+                        const imgHtml = `<img src="${detail.src}" alt="${detail.value}" class="inkflow-emoji" loading="lazy">&nbsp;`;
+                        document.execCommand('insertHTML', false, imgHtml);
+                    } else {
+                        document.execCommand('insertText', false, detail.value);
+                    }
+                    this.saveHistoryNow();
+                }
                 break;
         }
     }
@@ -874,6 +911,15 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
 
         // 1. Strip history bookmarks that might leak into the output
         body.querySelectorAll('.inkflow-bookmark').forEach(el => el.remove());
+
+        // 1.5 Restore Unicode emojis from local img tags
+        body.querySelectorAll('img.inkflow-emoji').forEach(img => {
+            const altText = img.getAttribute('alt');
+            if (altText) {
+                const textNode = document.createTextNode(altText);
+                img.replaceWith(textNode);
+            }
+        });
 
         // 2. Standardize tags
         body.querySelectorAll('b').forEach(b => {

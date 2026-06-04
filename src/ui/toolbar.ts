@@ -1,5 +1,6 @@
 import type { ThemeClasses, InkflowOptions, LocaleDict } from '../types/index';
 import { icons } from './icons';
+import { EmojiPicker } from './emoji-picker';
 
 /**
  * Toolbar Component
@@ -108,6 +109,9 @@ export class Toolbar {
     private createButton(btnName: string): HTMLElement {
         if (btnName === 'table') {
             return this.createTablePickerButton(btnName);
+        }
+        if (btnName === 'emoji') {
+            return this.createEmojiPickerButton(btnName);
         }
 
         const btnEl = document.createElement('button');
@@ -243,7 +247,7 @@ export class Toolbar {
             document.execCommand(commandMap[command], false, '');
         } else {
             // Dispatch to Editor for custom handling
-            const event = new CustomEvent('inkflow-custom-command', { detail: { command } });
+            const event = new CustomEvent('inkflow-custom-command', { detail: { command, value } });
             this.container.dispatchEvent(event);
             return;
         }
@@ -431,6 +435,38 @@ export class Toolbar {
         this.cleanupFnList.push(() => {
             document.removeEventListener('click', docClickListener);
         });
+    }
+
+    private createEmojiPickerButton(btnName: string): HTMLElement {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'inkflow-emoji-btn-wrapper';
+
+        const btnEl = document.createElement('button');
+        btnEl.className = this.theme.button;
+        btnEl.innerHTML = icons[btnName] || '😀';
+        btnEl.title = this.locale.toolbar[btnName] || 'Emoji';
+        btnEl.type = 'button';
+        btnEl.setAttribute('aria-label', btnEl.title);
+        btnEl.setAttribute('aria-haspopup', 'true');
+        btnEl.setAttribute('aria-expanded', 'false');
+        this.buttonElements.set(btnName, btnEl);
+        wrapper.appendChild(btnEl);
+
+        new EmojiPicker(
+            wrapper,
+            btnEl,
+            this.theme,
+            this.locale,
+            this.cleanupFnList,
+            (emoji, src) => {
+                const event = new CustomEvent('inkflow-custom-command', {
+                    detail: { command: 'emoji', value: emoji, src }
+                });
+                this.container.dispatchEvent(event);
+            }
+        );
+
+        return wrapper;
     }
 
     /**

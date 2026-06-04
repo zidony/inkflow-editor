@@ -41,7 +41,15 @@ export const enUS: LocaleDict = {
         undo: 'Undo',
         redo: 'Redo',
         sourceCode: 'Source Code',
-        fullscreen: 'Fullscreen'
+        fullscreen: 'Fullscreen',
+        emoji: 'Emoji'
+    },
+    emojiCategories: {
+        '表情': 'Smileys',
+        '人物': 'People',
+        '符号': 'Symbols',
+        '物品': 'Objects',
+        '自然': 'Nature'
     },
     prompts: {
         linkUrl: 'Enter link URL:',

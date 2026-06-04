@@ -41,7 +41,15 @@ export const zhCN: LocaleDict = {
         undo: '撤销',
         redo: '重做',
         sourceCode: '源码模式',
-        fullscreen: '全屏'
+        fullscreen: '全屏',
+        emoji: '表情'
+    },
+    emojiCategories: {
+        '表情': '表情',
+        '人物': '人物',
+        '符号': '符号',
+        '物品': '物品',
+        '自然': '自然'
     },
     prompts: {
         linkUrl: '请输入链接地址:',

@@ -16,6 +16,7 @@ Inkflow Editor is a lightweight, high-performance, and commercial-grade WYSIWYG 
 - **Notion-Style Uploads**: Intercepts `Ctrl+V` and Drag & Drop to automatically render pulsing skeleton loaders while uploading.
 - **Image Drag-to-Resize**: Professional-grade, non-intrusive handlings for image selection and seamless dragging to resize.
 - **Efficient Markdown Shortcuts**: Instantly converts `**bold**`, `*italic*`, and `` `code` `` on the fly. Added block support for **ordered lists (`1. `)**, **horizontal dividers (`---`)**, and **code blocks (`` ``` ``)**.
+- **Offline Emoji Picker**: Fully bundled Twemoji integration with category tabs. SVGs are inlined locally to guarantee zero network requests while ensuring data is safely stored as pure Unicode (`<img>` tags are never persisted).
 - **Memory Optimized**: Smart History Stack with dynamic byte-size capping prevents browser OOM on massive documents.
 - **Accessibility (A11y)**: WCAG 2.1 compliant with native ARIA tags and keyboard support.
 
