@@ -871,8 +871,10 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      * @returns A sanitized HTML string.
      */
     private sanitizeHTML(dirtyHtml: string): string {
+        // Strip HTML comments (like <!--StartFragment-->) before parsing
+        const cleanHtml = dirtyHtml.replace(/<!--[\s\S]*?-->/g, '');
         const parser = new DOMParser();
-        const doc = parser.parseFromString(dirtyHtml, 'text/html');
+        const doc = parser.parseFromString(cleanHtml, 'text/html');
         const body = doc.body;
 
         const forbiddenTags = ['script', 'style', 'meta', 'iframe', 'object', 'embed'];
