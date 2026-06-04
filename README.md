@@ -9,13 +9,14 @@ Inkflow Editor is a lightweight, high-performance, and commercial-grade WYSIWYG 
 ## ✨ Features
 
 - **Zero Dependencies**: Pure Vanilla JS, extremely lightweight (`< 30KB` gzipped).
-- **Modern Engineering Architecture (SPA Safe)**: Built on a robust Pub/Sub `EventEmitter` for elegant hooks. Memory-safe design detaches all global `window`/`document` listeners upon `destroy()`.
+- **Zero-Dependency Build Toolchain**: Native Node.js zip packager using built-in `zlib` and `fs`, completely removing bulky npm dependencies like `archiver` or `adm-zip`.
+- **World-Class Architecture**: Built on a robust Pub/Sub `EventEmitter` for elegant lifecycle hooks. Memory-safe design detaches all global `window`/`document` listeners upon `destroy()`.
 - **Caret Selection Preservation**: Temporary DOM Bookmarking preserves exact cursor/caret position on Undo and Redo actions seamlessly.
 - **Bottom Status Bar**: Dedicated status bar reporting word/character metrics, current mode, and dynamic flash badges ("Saved", "Undo", "Redo").
 - **Design System Ready**: Fully powered by CSS variables. Supports **`sm` / `md` / `lg`** scale adjustments for menu and relative-em icons seamlessly.
 - **Notion-Style Uploads**: Intercepts `Ctrl+V` and Drag & Drop to automatically render pulsing skeleton loaders while uploading.
 - **Image Drag-to-Resize**: Professional-grade, non-intrusive handlings for image selection and seamless dragging to resize.
-- **Efficient Markdown Shortcuts**: Instantly converts `**bold**`, `*italic*`, and `` `code` `` on the fly. Added block support for **ordered lists (`1. `)**, **horizontal dividers (`---`)**, and **code blocks (`` ``` ``)**.
+- **Efficient Markdown Shortcuts**: Instantly converts `**bold**`, `*italic*`, and `` `code` `` on the fly. Added block support for **ordered lists (`1. `)**, **horizontal dividers (`---`)**, and **code blocks (` ``` `)**.
 - **Offline Emoji Picker**: Fully bundled Twemoji integration with category tabs. SVGs are inlined locally to guarantee zero network requests while ensuring data is safely stored as pure Unicode (`<img>` tags are never persisted).
 - **Memory Optimized**: Smart History Stack with dynamic byte-size capping prevents browser OOM on massive documents.
 - **Accessibility (A11y)**: WCAG 2.1 compliant with native ARIA tags and keyboard support.
