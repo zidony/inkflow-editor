@@ -610,8 +610,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
 
     private async processImageUpload(file: File): Promise<void> {
         const uploadId = 'upload-img-' + Math.random().toString(36).substring(2, 9);
-        const skeletonHtml = `<span id="${uploadId}" class="inkflow-img-skeleton" contenteditable="false">🖼️ Uploading...</span>&nbsp;`;
-        this.commands.insertHTML(skeletonHtml);
+        this.commands.insertImageUploadPlaceholder(uploadId);
         
         const hook = this.options.hooks?.onUploadImage;
         if (!hook) return;

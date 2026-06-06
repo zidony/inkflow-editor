@@ -97,6 +97,36 @@ describe('CommandAdapter', () => {
         expect(image?.getAttribute('alt')).toBe('image');
     });
 
+    it('inserts a video element at the caret', () => {
+        const editor = createEditor('<p>Before </p>');
+        const paragraph = editor.querySelector('p') as HTMLParagraphElement;
+        placeCaretAtEnd(paragraph);
+
+        const commands = new CommandAdapter(editor);
+        commands.insertVideo('https://example.com/video.mp4');
+
+        const video = editor.querySelector('video');
+        expect(video?.getAttribute('src')).toBe('https://example.com/video.mp4');
+        expect(video?.hasAttribute('controls')).toBe(true);
+    });
+
+    it('inserts an image upload placeholder without parsing HTML strings', () => {
+        const editor = createEditor('<p>Before </p>');
+        const paragraph = editor.querySelector('p') as HTMLParagraphElement;
+        placeCaretAtEnd(paragraph);
+
+        const commands = new CommandAdapter(editor);
+        commands.insertImageUploadPlaceholder('upload-1', 'Uploading image...');
+
+        const placeholder = editor.querySelector('#upload-1') as HTMLElement;
+        expect(placeholder.className).toBe('inkflow-img-skeleton');
+        expect(placeholder.contentEditable).toBe('false');
+        expect(placeholder.textContent).toBe('Uploading image...');
+        expect(editor.innerHTML).toBe(
+            '<p>Before <span id="upload-1" class="inkflow-img-skeleton">Uploading image...</span>&nbsp;</p>'
+        );
+    });
+
     it('inserts a horizontal rule with a follow-up paragraph for continued typing', () => {
         const editor = createEditor('<p>Before</p>');
         const paragraph = editor.querySelector('p') as HTMLParagraphElement;

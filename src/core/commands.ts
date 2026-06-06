@@ -56,6 +56,26 @@ export class CommandAdapter {
         return this.insertNode(image);
     }
 
+    public insertVideo(url: string): boolean {
+        const video = document.createElement('video');
+        video.src = url;
+        video.controls = true;
+        return this.insertNode(video);
+    }
+
+    public insertImageUploadPlaceholder(id: string, label: string = 'Image uploading...'): boolean {
+        const fragment = document.createDocumentFragment();
+        const placeholder = document.createElement('span');
+        placeholder.id = id;
+        placeholder.className = 'inkflow-img-skeleton';
+        placeholder.contentEditable = 'false';
+        placeholder.textContent = label;
+
+        fragment.appendChild(placeholder);
+        fragment.appendChild(document.createTextNode('\u00A0'));
+        return this.insertFragment(fragment, placeholder);
+    }
+
     public insertHorizontalRule(): boolean {
         const rule = document.createElement('hr');
         const paragraph = document.createElement('p');

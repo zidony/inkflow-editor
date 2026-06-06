@@ -310,13 +310,15 @@ export class Toolbar {
 
         this.restoreSelection(savedRange);
         const safeUrl = sanitizeMediaUrl(url);
-        const videoHtml = url.includes('<iframe')
-            ? sanitizeHTML(url)
-            : safeUrl
-              ? `<video src="${safeUrl}" controls></video>`
-              : '';
-        if (!videoHtml) return;
-        this.commands.insertHTML(videoHtml);
+        if (url.includes('<iframe')) {
+            const iframeHtml = sanitizeHTML(url);
+            if (!iframeHtml) return;
+            this.commands.insertHTML(iframeHtml);
+        } else if (safeUrl) {
+            this.commands.insertVideo(safeUrl);
+        } else {
+            return;
+        }
         this.postAsyncCommand();
     }
 
