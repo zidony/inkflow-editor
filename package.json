@@ -1,6 +1,6 @@
 {
   "name": "inkflow-editor",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "type": "module",
   "main": "./dist/inkflow-editor.umd.js",
   "module": "./dist/inkflow-editor.es.js",
