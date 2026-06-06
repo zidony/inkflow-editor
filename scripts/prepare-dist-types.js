@@ -73,6 +73,7 @@ export interface EditorInstance {
     getHTML(): string;
     getText(): string;
     setHTML(html: string): void;
+    saveHistoryNow(): void;
     destroy(): void;
     on(event: string, handler: (...args: unknown[]) => void): void;
     off(event: string, handler: (...args: unknown[]) => void): void;

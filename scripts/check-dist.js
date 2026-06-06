@@ -53,6 +53,10 @@ if (!fs.existsSync(distDir)) {
         fail('Public index.d.ts should expose unknown[] event arguments.');
     }
 
+    if (!indexTypes.includes('saveHistoryNow(): void;')) {
+        fail('Public index.d.ts should expose saveHistoryNow().');
+    }
+
     if (!emojiTypes.includes("from './index'")) {
         fail('emoji.d.ts should reference the public index types.');
     }

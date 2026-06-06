@@ -91,6 +91,8 @@ export interface EditorInstance {
     getText(): string;
     /** Programmatically sets the HTML content of the editor. */
     setHTML(html: string): void;
+    /** Immediately saves the current content into the undo history and emits a change event when content changed. */
+    saveHistoryNow(): void;
     /** Completely removes the editor from the DOM and cleans up resources. */
     destroy(): void;
 
