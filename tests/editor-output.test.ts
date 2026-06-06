@@ -211,4 +211,21 @@ describe('InkflowEditor output normalization', () => {
         expect(editor.getHTML()).toBe('<p>Changed</p>');
         editor.destroy();
     });
+
+    it('does not emit change when a legacy toolbar command fails', () => {
+        const editor = createEditor('<p>Initial</p>');
+        const boldButton = document.querySelector<HTMLButtonElement>('[aria-label="Bold"]');
+        const changeHandler = vi.fn();
+        const originalExecCommand = document.execCommand;
+        document.execCommand = () => {
+            throw new Error('unsupported command');
+        };
+
+        editor.on('change', changeHandler);
+        boldButton?.click();
+
+        expect(changeHandler).not.toHaveBeenCalled();
+        document.execCommand = originalExecCommand;
+        editor.destroy();
+    });
 });

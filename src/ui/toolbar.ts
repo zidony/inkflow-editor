@@ -219,28 +219,32 @@ export class Toolbar {
             eraser: 'removeFormat'
         };
 
+        let commandHandled = false;
+
         if (command === 'heading' && value) {
-            this.commands.formatBlock(value);
+            commandHandled = this.commands.formatBlock(value);
         } else if (command === 'blockquote') {
             const currentBlock = this.commands.queryValue('formatBlock').toLowerCase();
             const targetBlock = currentBlock === 'blockquote' ? 'p' : 'blockquote';
-            this.commands.formatBlock(targetBlock);
+            commandHandled = this.commands.formatBlock(targetBlock);
         } else if (command === 'inlineCode') {
-            this.commands.wrapSelectionInInlineCode();
+            commandHandled = this.commands.wrapSelectionInInlineCode();
         } else if (command === 'divider') {
-            this.commands.insertHorizontalRule();
+            commandHandled = this.commands.insertHorizontalRule();
         } else if (command === 'undo' || command === 'redo') {
             const event = new CustomEvent('inkflow-custom-command', { detail: { command } });
             this.container.dispatchEvent(event);
             return;
         } else if (commandMap[command]) {
-            this.commands.exec(commandMap[command]);
+            commandHandled = this.commands.exec(commandMap[command]);
         } else {
             // Dispatch to Editor for custom handling
             const event = new CustomEvent('inkflow-custom-command', { detail: { command, value } });
             this.container.dispatchEvent(event);
             return;
         }
+
+        if (!commandHandled) return;
 
         this.updateState();
 
