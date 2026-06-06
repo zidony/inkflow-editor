@@ -1,6 +1,7 @@
 import type { ThemeClasses, InkflowOptions, LocaleDict } from '../types/index';
 import { icons } from './icons';
 import { EmojiPicker } from './emoji-picker';
+import { sanitizeHTML, sanitizeHref, sanitizeMediaUrl } from '../utils/security';
 
 /**
  * Toolbar Component
@@ -231,11 +232,15 @@ export class Toolbar {
         } else if (command === 'inlineCode') {
             const selection = window.getSelection();
             if (selection && selection.toString()) {
-                document.execCommand('insertHTML', false, `<code>${selection.toString()}</code>`);
+                const codeNode = document.createElement('code');
+                codeNode.textContent = selection.toString();
+                const wrapper = document.createElement('span');
+                wrapper.appendChild(codeNode);
+                document.execCommand('insertHTML', false, wrapper.innerHTML);
             } else if (selection && selection.rangeCount > 0) {
                 // If no text is selected, create an empty code block and place the cursor inside it
                 const codeNode = document.createElement('code');
-                codeNode.innerHTML = '&#8203;'; // Zero-width space to keep it selectable
+                codeNode.textContent = '\u200B';
                 const range = selection.getRangeAt(0);
                 range.insertNode(codeNode);
                 range.setStart(codeNode, 1);
@@ -269,10 +274,11 @@ export class Toolbar {
             ? await this.hooks.onInsertLink()
             : window.prompt(this.locale.prompts.linkUrl, this.locale.prompts.linkDefault);
 
-        if (!url) return;
+        const safeUrl = url ? sanitizeHref(url) : null;
+        if (!safeUrl) return;
 
         this.restoreSelection(savedRange);
-        document.execCommand('createLink', false, url);
+        document.execCommand('createLink', false, safeUrl);
         this.postAsyncCommand();
     }
 
@@ -284,10 +290,11 @@ export class Toolbar {
             ? await this.hooks.onInsertImage()
             : window.prompt(this.locale.prompts.imageUrl, this.locale.prompts.linkDefault);
 
-        if (!url) return;
+        const safeUrl = url ? sanitizeMediaUrl(url, 'image') : null;
+        if (!safeUrl) return;
 
         this.restoreSelection(savedRange);
-        document.execCommand('insertImage', false, url);
+        document.execCommand('insertImage', false, safeUrl);
         this.postAsyncCommand();
     }
 
@@ -302,9 +309,13 @@ export class Toolbar {
         if (!url) return;
 
         this.restoreSelection(savedRange);
+        const safeUrl = sanitizeMediaUrl(url);
         const videoHtml = url.includes('<iframe')
-            ? url
-            : `<video src="${url}" controls style="max-width: 100%;"></video>`;
+            ? sanitizeHTML(url)
+            : safeUrl
+              ? `<video src="${safeUrl}" controls></video>`
+              : '';
+        if (!videoHtml) return;
         document.execCommand('insertHTML', false, videoHtml);
         this.postAsyncCommand();
     }

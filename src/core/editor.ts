@@ -5,6 +5,7 @@ import { HistoryManager } from './history';
 import { enUS } from '../locales/en-US';
 import { zhCN } from '../locales/zh-CN';
 import { parseEmojisToHTML } from '../ui/emojis';
+import { sanitizeHTML, sanitizeMediaUrl } from '../utils/security';
 
 import { EventEmitter } from './emitter';
 
@@ -71,8 +72,8 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.locale = options.lang === 'en-US' ? enUS : zhCN;
         }
 
-        // Extract initial HTML before DOM is overwritten
-        const initialHtml = this.containerEl.innerHTML.trim();
+        // Extract and sanitize initial HTML before the container is overwritten.
+        const initialHtml = sanitizeHTML(this.containerEl.innerHTML.trim());
 
         this.initDOM(initialHtml);
         this.history = new HistoryManager(this.getHTML());
@@ -92,9 +93,9 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.createResizerOverlay();
         this.createStatusBar();
         
-        // Inject the initial HTML
+        // Inject the initial HTML.
         if (initialHtml) {
-            this.editorAreaEl.innerHTML = initialHtml;
+            this.editorAreaEl.innerHTML = parseEmojisToHTML(initialHtml);
         }
 
         this.wrapperEl.appendChild(this.toolbarEl);
@@ -316,7 +317,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      * @param html The HTML string to inject.
      */
     public setHTML(html: string): void {
-        this.editorAreaEl.innerHTML = parseEmojisToHTML(html);
+        this.editorAreaEl.innerHTML = parseEmojisToHTML(sanitizeHTML(html));
         this.saveHistoryNow();
     }
 
@@ -494,7 +495,11 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         const isCmdOrCtrl = e.metaKey || e.ctrlKey;
         if (isCmdOrCtrl && e.key.toLowerCase() === 'z') {
             e.preventDefault();
-            e.shiftKey ? this.performRedo() : this.performUndo();
+            if (e.shiftKey) {
+                this.performRedo();
+            } else {
+                this.performUndo();
+            }
         } else if (isCmdOrCtrl && e.key.toLowerCase() === 'y') {
             e.preventDefault();
             this.performRedo();
@@ -520,7 +525,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         const text = e.clipboardData.getData('text/plain');
 
         if (html) {
-            document.execCommand('insertHTML', false, this.sanitizeHTML(html));
+            document.execCommand('insertHTML', false, sanitizeHTML(html));
         } else if (text) {
             document.execCommand('insertText', false, text);
         }
@@ -594,8 +599,18 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             const skeletonEl = this.editorAreaEl.querySelector(`#${uploadId}`);
             if (skeletonEl) {
                 if (url) {
-                    const imgHtml = `<img src="${url}" alt="image" style="max-width:100%;height:auto;">&nbsp;`;
-                    skeletonEl.outerHTML = imgHtml;
+                    const safeUrl = sanitizeMediaUrl(url, 'image');
+                    if (!safeUrl) {
+                        skeletonEl.remove();
+                        return;
+                    }
+
+                    const img = document.createElement('img');
+                    img.src = safeUrl;
+                    img.alt = 'image';
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    skeletonEl.replaceWith(img, document.createTextNode('\u00A0'));
                     this.saveHistoryNow();
                 } else {
                     skeletonEl.remove();
@@ -629,8 +644,16 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             case 'emoji':
                 if (detail.value) {
                     if (detail.src) {
-                        const imgHtml = `<img src="${detail.src}" alt="${detail.value}" class="inkflow-emoji" loading="lazy">&nbsp;`;
-                        document.execCommand('insertHTML', false, imgHtml);
+                        const img = document.createElement('img');
+                        img.src = detail.src;
+                        img.alt = detail.value;
+                        img.className = 'inkflow-emoji';
+                        img.loading = 'lazy';
+                        img.draggable = false;
+                        const wrapper = document.createElement('span');
+                        wrapper.appendChild(img);
+                        wrapper.appendChild(document.createTextNode('\u00A0'));
+                        document.execCommand('insertHTML', false, wrapper.innerHTML);
                     } else {
                         document.execCommand('insertText', false, detail.value);
                     }
@@ -655,7 +678,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.sourceCodeEl.style.display = 'block';
             this.toolbarInstance.setDisabled(true);
         } else {
-            this.editorAreaEl.innerHTML = this.sourceCodeEl.value;
+            this.editorAreaEl.innerHTML = parseEmojisToHTML(sanitizeHTML(this.sourceCodeEl.value));
             // Sync height so if user resized source editor, visual editor matches
             this.editorAreaEl.style.height = `${this.sourceCodeEl.offsetHeight}px`;
             
@@ -866,41 +889,6 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     // Utilities
     // ============================================================================
     /**
-     * Cleans up pasted HTML to prevent XSS and strip unwanted styles.
-     * @param dirtyHtml The raw HTML string.
-     * @returns A sanitized HTML string.
-     */
-    private sanitizeHTML(dirtyHtml: string): string {
-        // Strip HTML comments (like <!--StartFragment-->) before parsing
-        const cleanHtml = dirtyHtml.replace(/<!--[\s\S]*?-->/g, '');
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(cleanHtml, 'text/html');
-        const body = doc.body;
-
-        const forbiddenTags = ['script', 'style', 'meta', 'iframe', 'object', 'embed'];
-        forbiddenTags.forEach(tag => body.querySelectorAll(tag).forEach(el => el.remove()));
-
-        body.querySelectorAll('*').forEach(el => {
-            el.removeAttribute('style');
-            el.removeAttribute('class');
-            el.removeAttribute('id');
-
-            Array.from(el.attributes).forEach(attr => {
-                if (attr.name.toLowerCase().startsWith('on')) {
-                    el.removeAttribute(attr.name);
-                }
-            });
-        });
-        return body.innerHTML;
-    }
-
-    /**
-     * Processes editor HTML to ensure standard tags (e.g., strong instead of b)
-     * and removes empty formatting blocks.
-     * @param html The raw editor HTML.
-     * @returns Formatted HTML string.
-     */
-    /**
      * Processes editor HTML to ensure standard tags (e.g., strong instead of b)
      * and removes empty formatting blocks.
      * @param html The raw editor HTML.
@@ -991,7 +979,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             const startRange = range.cloneRange();
             startRange.collapse(true);
             startRange.insertNode(startBookmark);
-        } catch (e) {
+        } catch {
             // Fallback if insertion fails in edge cases (e.g. read-only elements)
             return this.editorAreaEl.innerHTML;
         }
@@ -1030,7 +1018,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
                     sel.removeAllRanges();
                     sel.addRange(range);
                 }
-            } catch (e) {
+            } catch {
                 // Fallback cleanup if range building fails
                 if (startBookmark) startBookmark.remove();
                 if (endBookmark) endBookmark.remove();

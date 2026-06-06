@@ -22,7 +22,9 @@
     "build:demo": "vite build -c vite.demo.config.ts",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,js,css,html}\"",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck && npm run build",
     "release": "npm run build && node scripts/release.js"
   },
   "devDependencies": {
