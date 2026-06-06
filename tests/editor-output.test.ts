@@ -228,4 +228,29 @@ describe('InkflowEditor output normalization', () => {
         document.execCommand = originalExecCommand;
         editor.destroy();
     });
+
+    it('keeps markdown trigger text when a legacy markdown command fails', () => {
+        const editor = createEditor('<p># </p>');
+        const editorBody = document.querySelector<HTMLElement>('.inkflow-editor-body');
+        const textNode = editorBody?.querySelector('p')?.firstChild as Text;
+        const changeHandler = vi.fn();
+        const originalExecCommand = document.execCommand;
+        const range = document.createRange();
+
+        document.execCommand = () => {
+            throw new Error('unsupported command');
+        };
+        editor.on('change', changeHandler);
+        range.setStart(textNode, 2);
+        range.collapse(true);
+        window.getSelection()?.removeAllRanges();
+        window.getSelection()?.addRange(range);
+
+        editorBody?.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', code: 'Space', bubbles: true }));
+
+        expect(editor.getHTML()).toBe('<p># </p>');
+        expect(changeHandler).not.toHaveBeenCalled();
+        document.execCommand = originalExecCommand;
+        editor.destroy();
+    });
 });

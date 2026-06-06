@@ -942,10 +942,11 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
 
         for (const rule of rules) {
             if (textNormal === rule.prefix) {
-                block.textContent = '';
                 this.editorAreaEl.focus();
-                this.commands.exec(rule.command, rule.value || '');
-                this.saveHistoryNow();
+                if (this.commands.exec(rule.command, rule.value || '')) {
+                    block.textContent = '';
+                    this.saveHistoryNow();
+                }
                 break;
             }
         }
