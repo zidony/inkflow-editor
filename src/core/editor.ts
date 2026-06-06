@@ -721,7 +721,10 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.sourceCodeEl.style.display = 'block';
             this.toolbarInstance.setDisabled(true);
         } else {
-            this.editorAreaEl.innerHTML = this.parseEmojiHTML(sanitizeHTML(this.sourceCodeEl.value));
+            const sanitizedHtml = sanitizeHTML(this.sourceCodeEl.value);
+            const formattedHtml = this.formatOutputHTML(sanitizedHtml);
+            this.sourceCodeEl.value = formattedHtml;
+            this.editorAreaEl.innerHTML = this.parseEmojiHTML(formattedHtml);
             // Sync height so if user resized source editor, visual editor matches
             this.editorAreaEl.style.height = `${this.sourceCodeEl.offsetHeight}px`;
             
