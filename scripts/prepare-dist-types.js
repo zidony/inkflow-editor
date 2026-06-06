@@ -74,9 +74,9 @@ export interface EditorInstance {
     getText(): string;
     setHTML(html: string): void;
     destroy(): void;
-    on(event: string, handler: (...args: any[]) => void): void;
-    off(event: string, handler: (...args: any[]) => void): void;
-    emit(event: string, ...args: any[]): void;
+    on(event: string, handler: (...args: unknown[]) => void): void;
+    off(event: string, handler: (...args: unknown[]) => void): void;
+    emit(event: string, ...args: unknown[]): void;
 }
 
 export declare const inkflowTheme: ThemeClasses;
@@ -88,9 +88,9 @@ export declare class InkflowEditor implements EditorInstance {
     setHTML(html: string): void;
     saveHistoryNow(): void;
     destroy(): void;
-    on(event: string, handler: (...args: any[]) => void): void;
-    off(event: string, handler: (...args: any[]) => void): void;
-    emit(event: string, ...args: any[]): void;
+    on(event: string, handler: (...args: unknown[]) => void): void;
+    off(event: string, handler: (...args: unknown[]) => void): void;
+    emit(event: string, ...args: unknown[]): void;
 }
 `;
 

@@ -27,11 +27,11 @@
     "build:demo": "vite build -c vite.demo.config.ts",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,js,css,html}\"",
-    "lint": "eslint src tests vitest.config.ts",
+    "lint": "eslint src tests scripts *.config.js",
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
-    "check": "npm run lint && npm run typecheck && npm run test:run && npm run build",
+    "check": "npm run lint && npm run typecheck && npm run test:run && npm run build && node scripts/check-dist.js",
     "release": "npm run build && node scripts/release.js"
   },
   "devDependencies": {
