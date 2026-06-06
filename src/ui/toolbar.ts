@@ -2,6 +2,7 @@ import type { ThemeClasses, InkflowOptions, LocaleDict } from '../types/index';
 import { icons } from './icons';
 import { EmojiPicker } from './emoji-picker';
 import { sanitizeHTML, sanitizeHref, sanitizeMediaUrl } from '../utils/security';
+import type { CommandAdapter } from '../core/commands';
 
 /**
  * Toolbar Component
@@ -16,6 +17,7 @@ export class Toolbar {
     private theme: ThemeClasses;
     private config: Array<string | string[]>;
     private locale: LocaleDict;
+    private commands: CommandAdapter;
     private hooks?: InkflowOptions['hooks'];
 
     private buttonElements: Map<string, HTMLButtonElement | HTMLElement> = new Map();
@@ -34,6 +36,7 @@ export class Toolbar {
         theme: ThemeClasses,
         config: Array<string | string[]>,
         locale: LocaleDict,
+        commands: CommandAdapter,
         hooks?: InkflowOptions['hooks']
     ) {
         this.container = container;
@@ -41,6 +44,7 @@ export class Toolbar {
         this.theme = theme;
         this.config = config;
         this.locale = locale;
+        this.commands = commands;
         this.hooks = hooks;
 
         this.render();
@@ -150,12 +154,8 @@ export class Toolbar {
 
     private syncHeadingSelect(): void {
         if (!this.headingSelectEl) return;
-        try {
-            const currentBlock = document.queryCommandValue('formatBlock').toLowerCase();
-            this.headingSelectEl.value = currentBlock || 'p';
-        } catch {
-            this.headingSelectEl.value = 'p';
-        }
+        const currentBlock = this.commands.queryValue('formatBlock').toLowerCase();
+        this.headingSelectEl.value = currentBlock || 'p';
     }
 
     private syncButtonsState(): void {
@@ -172,24 +172,19 @@ export class Toolbar {
         };
 
         this.buttonElements.forEach((btnEl, btnName) => {
-            try {
-                let isActive = false;
-                if (btnName === 'blockquote') {
-                    isActive =
-                        document.queryCommandValue('formatBlock').toLowerCase() === 'blockquote';
-                } else if (stateQueries[btnName]) {
-                    isActive = document.queryCommandState(stateQueries[btnName]);
-                }
+            let isActive = false;
+            if (btnName === 'blockquote') {
+                isActive = this.commands.queryValue('formatBlock').toLowerCase() === 'blockquote';
+            } else if (stateQueries[btnName]) {
+                isActive = this.commands.queryState(stateQueries[btnName]);
+            }
 
-                if (isActive) {
-                    btnEl.classList.add(this.theme.buttonActive);
-                    btnEl.setAttribute('aria-pressed', 'true');
-                } else {
-                    btnEl.classList.remove(this.theme.buttonActive);
-                    btnEl.setAttribute('aria-pressed', 'false');
-                }
-            } catch {
-                // Ignore queryCommandState errors for unsupported commands
+            if (isActive) {
+                btnEl.classList.add(this.theme.buttonActive);
+                btnEl.setAttribute('aria-pressed', 'true');
+            } else {
+                btnEl.classList.remove(this.theme.buttonActive);
+                btnEl.setAttribute('aria-pressed', 'false');
             }
         });
     }
@@ -198,10 +193,10 @@ export class Toolbar {
     // Command Dispatching
     // ============================================================================
     /**
-     * Central command dispatcher that routes commands to native execCommand or custom events.
+     * Central command dispatcher for toolbar actions.
      */
     private executeCommand(command: string, value?: string): void {
-        this.editorArea.focus();
+        this.commands.focus();
 
         if (command === 'link') return void this.handleInsertLink();
         if (command === 'image') return void this.handleInsertImage();
@@ -224,11 +219,11 @@ export class Toolbar {
         };
 
         if (command === 'heading' && value) {
-            document.execCommand('formatBlock', false, value);
+            this.commands.formatBlock(value);
         } else if (command === 'blockquote') {
-            const currentBlock = document.queryCommandValue('formatBlock').toLowerCase();
+            const currentBlock = this.commands.queryValue('formatBlock').toLowerCase();
             const targetBlock = currentBlock === 'blockquote' ? 'p' : 'blockquote';
-            document.execCommand('formatBlock', false, targetBlock);
+            this.commands.formatBlock(targetBlock);
         } else if (command === 'inlineCode') {
             const selection = window.getSelection();
             if (selection && selection.toString()) {
@@ -236,7 +231,7 @@ export class Toolbar {
                 codeNode.textContent = selection.toString();
                 const wrapper = document.createElement('span');
                 wrapper.appendChild(codeNode);
-                document.execCommand('insertHTML', false, wrapper.innerHTML);
+                this.commands.insertHTML(wrapper.innerHTML);
             } else if (selection && selection.rangeCount > 0) {
                 // If no text is selected, create an empty code block and place the cursor inside it
                 const codeNode = document.createElement('code');
@@ -249,7 +244,7 @@ export class Toolbar {
                 selection.addRange(range);
             }
         } else if (commandMap[command]) {
-            document.execCommand(commandMap[command], false, '');
+            this.commands.exec(commandMap[command]);
         } else {
             // Dispatch to Editor for custom handling
             const event = new CustomEvent('inkflow-custom-command', { detail: { command, value } });
@@ -278,7 +273,7 @@ export class Toolbar {
         if (!safeUrl) return;
 
         this.restoreSelection(savedRange);
-        document.execCommand('createLink', false, safeUrl);
+        this.commands.createLink(safeUrl);
         this.postAsyncCommand();
     }
 
@@ -294,7 +289,7 @@ export class Toolbar {
         if (!safeUrl) return;
 
         this.restoreSelection(savedRange);
-        document.execCommand('insertImage', false, safeUrl);
+        this.commands.insertImage(safeUrl);
         this.postAsyncCommand();
     }
 
@@ -316,7 +311,7 @@ export class Toolbar {
               ? `<video src="${safeUrl}" controls></video>`
               : '';
         if (!videoHtml) return;
-        document.execCommand('insertHTML', false, videoHtml);
+        this.commands.insertHTML(videoHtml);
         this.postAsyncCommand();
     }
 

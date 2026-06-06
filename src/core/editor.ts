@@ -7,6 +7,7 @@ import { zhCN } from '../locales/zh-CN';
 import { parseEmojisToHTML } from '../ui/emojis';
 import { sanitizeHTML, sanitizeMediaUrl } from '../utils/security';
 
+import { CommandAdapter } from './commands';
 import { EventEmitter } from './emitter';
 
 /**
@@ -32,9 +33,11 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     private isSourceMode: boolean = false;
     private activeResizingImage: HTMLImageElement | null = null;
     private toolbarInstance!: Toolbar;
+    private commands!: CommandAdapter;
     private history!: HistoryManager;
     private historyTimeout: number | null = null;
     private savedRange: Range | null = null;
+    private isComposing: boolean = false;
 
     private activeResizerMouseMove: ((e: MouseEvent) => void) | null = null;
     private activeResizerMouseUp: (() => void) | null = null;
@@ -89,6 +92,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.createWrapper();
         this.createToolbar();
         this.createEditorArea();
+        this.commands = new CommandAdapter(this.editorAreaEl);
         this.createSourceArea();
         this.createResizerOverlay();
         this.createStatusBar();
@@ -287,6 +291,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.theme,
             toolbarConfig,
             this.locale,
+            this.commands,
             this.options.hooks
         );
     }
@@ -399,6 +404,14 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.editorAreaEl.addEventListener('mouseup', () => this.handleSelectionSave());
         this.editorAreaEl.addEventListener('focusout', () => this.handleSelectionSave());
         this.editorAreaEl.addEventListener('copy', (e) => this.handleCopyEvent(e as ClipboardEvent));
+        this.editorAreaEl.addEventListener('compositionstart', () => {
+            this.isComposing = true;
+        });
+        this.editorAreaEl.addEventListener('compositionend', () => {
+            this.isComposing = false;
+            this.debounceSaveHistory();
+            this.updateStatusBar();
+        });
 
         // Keyboard & State tracking
         this.editorAreaEl.addEventListener('mouseup', () => this.toolbarInstance.updateState());
@@ -457,6 +470,11 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     private handleKeyboardEvent(e: KeyboardEvent): void {
         this.toolbarInstance.updateState();
 
+        if (this.isComposing || e.isComposing) {
+            this.updateStatusBar();
+            return;
+        }
+
         const ignoredKeys = [
             'ArrowUp',
             'ArrowDown',
@@ -481,6 +499,8 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     }
 
     private handleShortcuts(e: KeyboardEvent): void {
+        if (this.isComposing || e.isComposing) return;
+
         // Image deletion
         if (e.key === 'Backspace' || e.key === 'Delete') {
             const selectedImage = this.editorAreaEl.querySelector('img.is-selected');
@@ -525,9 +545,9 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         const text = e.clipboardData.getData('text/plain');
 
         if (html) {
-            document.execCommand('insertHTML', false, sanitizeHTML(html));
+            this.commands.insertHTML(sanitizeHTML(html));
         } else if (text) {
-            document.execCommand('insertText', false, text);
+            this.commands.insertText(text);
         }
 
         this.saveHistoryNow();
@@ -589,7 +609,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     private async processImageUpload(file: File): Promise<void> {
         const uploadId = 'upload-img-' + Math.random().toString(36).substring(2, 9);
         const skeletonHtml = `<span id="${uploadId}" class="inkflow-img-skeleton" contenteditable="false">🖼️ Uploading...</span>&nbsp;`;
-        document.execCommand('insertHTML', false, skeletonHtml);
+        this.commands.insertHTML(skeletonHtml);
         
         const hook = this.options.hooks?.onUploadImage;
         if (!hook) return;
@@ -653,9 +673,9 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
                         const wrapper = document.createElement('span');
                         wrapper.appendChild(img);
                         wrapper.appendChild(document.createTextNode('\u00A0'));
-                        document.execCommand('insertHTML', false, wrapper.innerHTML);
+                        this.commands.insertHTML(wrapper.innerHTML);
                     } else {
-                        document.execCommand('insertText', false, detail.value);
+                        this.commands.insertText(detail.value);
                     }
                     this.saveHistoryNow();
                 }
@@ -706,7 +726,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
 
     private insertCodeBlock(): void {
         const html = `<pre><code>// Paste your code here...</code></pre><p><br></p>`;
-        document.execCommand('insertHTML', false, html);
+        this.commands.insertHTML(html);
         this.saveHistoryNow();
     }
 
@@ -731,7 +751,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         }
         tableHtml += '</tbody></table><p><br></p>';
 
-        document.execCommand('insertHTML', false, tableHtml);
+        this.commands.insertHTML(tableHtml);
         this.saveHistoryNow();
     }
 
@@ -851,7 +871,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         if (textNormal === '---' || textNormal === '--- ' || textNormal === '***' || textNormal === '*** ') {
             block.textContent = '';
             this.editorAreaEl.focus();
-            document.execCommand('insertHorizontalRule', false);
+            this.commands.exec('insertHorizontalRule');
             this.saveHistoryNow();
             return;
         }
@@ -878,7 +898,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             if (textNormal === rule.prefix) {
                 block.textContent = '';
                 this.editorAreaEl.focus();
-                document.execCommand(rule.command, false, rule.value);
+                this.commands.exec(rule.command, rule.value || '');
                 this.saveHistoryNow();
                 break;
             }
