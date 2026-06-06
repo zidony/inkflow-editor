@@ -120,4 +120,45 @@ describe('CommandAdapter', () => {
 
         expect(editor.innerHTML).toBe('<hr><p><br></p>');
     });
+
+    it('inserts a code block and places the caret inside the code element', () => {
+        const editor = createEditor('<p>Before</p>');
+        const paragraph = editor.querySelector('p') as HTMLParagraphElement;
+        placeCaretAtEnd(paragraph);
+
+        const commands = new CommandAdapter(editor);
+        commands.insertCodeBlock();
+
+        const code = editor.querySelector('code');
+        expect(editor.innerHTML).toBe(
+            '<p>Before</p><pre><code>// Paste your code here...</code></pre><p><br></p>'
+        );
+        expect(window.getSelection()?.isCollapsed).toBe(true);
+        expect(code?.contains(window.getSelection()?.anchorNode || null)).toBe(true);
+    });
+
+    it('inserts a table and places the caret in the first cell', () => {
+        const editor = createEditor('<p>Before</p>');
+        const paragraph = editor.querySelector('p') as HTMLParagraphElement;
+        placeCaretAtEnd(paragraph);
+
+        const commands = new CommandAdapter(editor);
+        commands.insertTable(2, 3);
+
+        const cells = editor.querySelectorAll('td');
+        expect(cells).toHaveLength(6);
+        expect(editor.innerHTML).toBe(
+            '<p>Before</p><table><tbody><tr><td><br></td><td><br></td><td><br></td></tr><tr><td><br></td><td><br></td><td><br></td></tr></tbody></table><p><br></p>'
+        );
+        expect(cells[0].contains(window.getSelection()?.anchorNode || null)).toBe(true);
+    });
+
+    it('rejects invalid table dimensions', () => {
+        const editor = createEditor('<p>Before</p>');
+        const commands = new CommandAdapter(editor);
+
+        expect(commands.insertTable(0, 3)).toBe(false);
+        expect(commands.insertTable(2, -1)).toBe(false);
+        expect(editor.innerHTML).toBe('<p>Before</p>');
+    });
 });

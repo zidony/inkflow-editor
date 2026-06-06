@@ -61,29 +61,56 @@ export class CommandAdapter {
         const paragraph = document.createElement('p');
         paragraph.appendChild(document.createElement('br'));
 
-        const range = this.getActiveRange();
-        if (!range) {
-            this.editorArea.append(rule, paragraph);
-            this.placeCaretAtStart(paragraph);
-            this.focus();
-            return true;
-        }
-
-        range.deleteContents();
-
-        const block = this.getClosestEditableBlock(range.commonAncestorContainer);
-        if (block) {
-            block.after(rule, paragraph);
-            if (this.isEmptyBlock(block)) {
-                block.remove();
-            }
-        } else {
-            range.insertNode(paragraph);
-            paragraph.before(rule);
-        }
-
-        this.placeCaretAtStart(paragraph);
+        this.insertBlockNodes([rule, paragraph]);
         this.focus();
+        this.placeCaretAtStart(paragraph);
+        return true;
+    }
+
+    public insertCodeBlock(placeholder: string = '// Paste your code here...'): boolean {
+        const pre = document.createElement('pre');
+        const code = document.createElement('code');
+        const paragraph = document.createElement('p');
+
+        code.textContent = placeholder;
+        pre.appendChild(code);
+        paragraph.appendChild(document.createElement('br'));
+
+        this.insertBlockNodes([pre, paragraph]);
+        this.focus();
+        this.placeCaretAtEnd(code);
+        return true;
+    }
+
+    public insertTable(rows: number, cols: number): boolean {
+        if (!Number.isInteger(rows) || !Number.isInteger(cols) || rows < 1 || cols < 1) {
+            return false;
+        }
+
+        const table = document.createElement('table');
+        const tbody = document.createElement('tbody');
+        const paragraph = document.createElement('p');
+        let firstCell: HTMLTableCellElement | null = null;
+
+        for (let rowIndex = 0; rowIndex < rows; rowIndex++) {
+            const row = document.createElement('tr');
+            for (let colIndex = 0; colIndex < cols; colIndex++) {
+                const cell = document.createElement('td');
+                cell.appendChild(document.createElement('br'));
+                firstCell ??= cell;
+                row.appendChild(cell);
+            }
+            tbody.appendChild(row);
+        }
+
+        table.appendChild(tbody);
+        paragraph.appendChild(document.createElement('br'));
+
+        this.insertBlockNodes([table, paragraph]);
+        this.focus();
+        if (firstCell) {
+            this.placeCaretAtStart(firstCell);
+        }
         return true;
     }
 
@@ -124,6 +151,29 @@ export class CommandAdapter {
 
     private isEmptyBlock(block: HTMLElement): boolean {
         return block.textContent?.replace(/\u00A0/g, ' ').trim() === '' && !block.querySelector('img,video,iframe,table');
+    }
+
+    private insertBlockNodes(nodes: Node[]): void {
+        const range = this.getActiveRange();
+        if (!range) {
+            this.editorArea.append(...nodes);
+            return;
+        }
+
+        range.deleteContents();
+
+        const block = this.getClosestEditableBlock(range.commonAncestorContainer);
+        if (block) {
+            block.after(...nodes);
+            if (this.isEmptyBlock(block)) {
+                block.remove();
+            }
+            return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        fragment.append(...nodes);
+        range.insertNode(fragment);
     }
 
     private insertFragment(fragment: DocumentFragment, caretNode?: Node): boolean {

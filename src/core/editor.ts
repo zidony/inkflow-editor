@@ -727,14 +727,11 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     }
 
     private insertCodeBlock(): void {
-        const html = `<pre><code>// Paste your code here...</code></pre><p><br></p>`;
-        this.commands.insertHTML(html);
+        this.commands.insertCodeBlock();
         this.saveHistoryNow();
     }
 
     private insertTable(rows: number, cols: number): void {
-        if (!rows || !cols) return;
-
         this.editorAreaEl.focus();
 
         if (this.savedRange) {
@@ -743,18 +740,9 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             sel?.addRange(this.savedRange);
         }
 
-        let tableHtml = '<table><tbody>';
-        for (let r = 0; r < rows; r++) {
-            tableHtml += '<tr>';
-            for (let c = 0; c < cols; c++) {
-                tableHtml += '<td><br></td>';
-            }
-            tableHtml += '</tr>';
+        if (this.commands.insertTable(rows, cols)) {
+            this.saveHistoryNow();
         }
-        tableHtml += '</tbody></table><p><br></p>';
-
-        this.commands.insertHTML(tableHtml);
-        this.saveHistoryNow();
     }
 
     // ============================================================================
