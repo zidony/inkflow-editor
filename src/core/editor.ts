@@ -873,7 +873,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         if (textNormal === '---' || textNormal === '--- ' || textNormal === '***' || textNormal === '*** ') {
             block.textContent = '';
             this.editorAreaEl.focus();
-            this.commands.exec('insertHorizontalRule');
+            this.commands.insertHorizontalRule();
             this.saveHistoryNow();
             return;
         }

@@ -96,4 +96,28 @@ describe('CommandAdapter', () => {
         expect(image?.getAttribute('src')).toBe('https://example.com/image.png');
         expect(image?.getAttribute('alt')).toBe('image');
     });
+
+    it('inserts a horizontal rule with a follow-up paragraph for continued typing', () => {
+        const editor = createEditor('<p>Before</p>');
+        const paragraph = editor.querySelector('p') as HTMLParagraphElement;
+        placeCaretAtEnd(paragraph);
+
+        const commands = new CommandAdapter(editor);
+        commands.insertHorizontalRule();
+
+        expect(editor.innerHTML).toBe('<p>Before</p><hr><p><br></p>');
+        expect(window.getSelection()?.isCollapsed).toBe(true);
+        expect(editor.contains(window.getSelection()?.anchorNode || null)).toBe(true);
+    });
+
+    it('replaces an empty active block when inserting a horizontal rule', () => {
+        const editor = createEditor('<p><br></p>');
+        const paragraph = editor.querySelector('p') as HTMLParagraphElement;
+        placeCaretAtEnd(paragraph);
+
+        const commands = new CommandAdapter(editor);
+        commands.insertHorizontalRule();
+
+        expect(editor.innerHTML).toBe('<hr><p><br></p>');
+    });
 });

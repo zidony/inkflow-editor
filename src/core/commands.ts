@@ -56,6 +56,37 @@ export class CommandAdapter {
         return this.insertNode(image);
     }
 
+    public insertHorizontalRule(): boolean {
+        const rule = document.createElement('hr');
+        const paragraph = document.createElement('p');
+        paragraph.appendChild(document.createElement('br'));
+
+        const range = this.getActiveRange();
+        if (!range) {
+            this.editorArea.append(rule, paragraph);
+            this.placeCaretAtStart(paragraph);
+            this.focus();
+            return true;
+        }
+
+        range.deleteContents();
+
+        const block = this.getClosestEditableBlock(range.commonAncestorContainer);
+        if (block) {
+            block.after(rule, paragraph);
+            if (this.isEmptyBlock(block)) {
+                block.remove();
+            }
+        } else {
+            range.insertNode(paragraph);
+            paragraph.before(rule);
+        }
+
+        this.placeCaretAtStart(paragraph);
+        this.focus();
+        return true;
+    }
+
     public queryState(command: string): boolean {
         try {
             return document.queryCommandState(command);
@@ -84,16 +115,31 @@ export class CommandAdapter {
         return containerElement && this.editorArea.contains(containerElement) ? range : null;
     }
 
-    private insertFragment(fragment: DocumentFragment): boolean {
+    private getClosestEditableBlock(node: Node): HTMLElement | null {
+        const element = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
+        const block = element?.closest<HTMLElement>('p,div,li,blockquote,h1,h2,h3,h4,h5,h6,pre');
+
+        return block && this.editorArea.contains(block) && block !== this.editorArea ? block : null;
+    }
+
+    private isEmptyBlock(block: HTMLElement): boolean {
+        return block.textContent?.replace(/\u00A0/g, ' ').trim() === '' && !block.querySelector('img,video,iframe,table');
+    }
+
+    private insertFragment(fragment: DocumentFragment, caretNode?: Node): boolean {
         const range = this.getActiveRange();
         if (!range) {
             this.editorArea.appendChild(fragment);
-            this.placeCaretAtEnd(this.editorArea);
+            if (caretNode) {
+                this.placeCaretAtStart(caretNode);
+            } else {
+                this.placeCaretAtEnd(this.editorArea);
+            }
             this.focus();
             return true;
         }
 
-        const lastNode = fragment.lastChild;
+        const lastNode = caretNode || fragment.lastChild;
         range.deleteContents();
         range.insertNode(fragment);
 
@@ -134,6 +180,16 @@ export class CommandAdapter {
         const range = document.createRange();
         range.selectNodeContents(element);
         range.collapse(false);
+
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+    }
+
+    private placeCaretAtStart(node: Node): void {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        range.collapse(true);
 
         const selection = window.getSelection();
         selection?.removeAllRanges();

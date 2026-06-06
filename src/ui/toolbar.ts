@@ -217,7 +217,6 @@ export class Toolbar {
             listUl: 'insertUnorderedList',
             listOl: 'insertOrderedList',
             eraser: 'removeFormat',
-            divider: 'insertHorizontalRule',
             undo: 'undo',
             redo: 'redo'
         };
@@ -247,6 +246,8 @@ export class Toolbar {
                 selection.removeAllRanges();
                 selection.addRange(range);
             }
+        } else if (command === 'divider') {
+            this.commands.insertHorizontalRule();
         } else if (commandMap[command]) {
             this.commands.exec(commandMap[command]);
         } else {
