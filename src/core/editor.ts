@@ -313,7 +313,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      */
     public getHTML(): string {
         return this.isSourceMode
-            ? this.sourceCodeEl.value
+            ? this.formatOutputHTML(sanitizeHTML(this.sourceCodeEl.value))
             : this.formatOutputHTML(this.editorAreaEl.innerHTML);
     }
 
