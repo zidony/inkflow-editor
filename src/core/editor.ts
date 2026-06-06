@@ -35,8 +35,11 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     private commands!: CommandAdapter;
     private history!: HistoryManager;
     private historyTimeout: number | null = null;
+    private readyTimeout: number | null = null;
+    private statusMessageTimeout: number | null = null;
     private savedRange: Range | null = null;
     private isComposing: boolean = false;
+    private previousBodyOverflow: string = '';
 
     private activeResizerMouseMove: ((e: MouseEvent) => void) | null = null;
     private activeResizerMouseUp: (() => void) | null = null;
@@ -114,8 +117,11 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.bindEvents();
         this.updateStatusBar();
 
-        // Emit ready event after DOM is fully initialized
-        setTimeout(() => this.emit('ready', this), 0);
+        // Emit ready event after DOM is fully initialized.
+        this.readyTimeout = window.setTimeout(() => {
+            this.readyTimeout = null;
+            this.emit('ready', this);
+        }, 0);
     }
 
     private createWrapper(): void {
@@ -354,10 +360,18 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             document.removeEventListener('mouseup', this.activeResizerMouseUp);
         }
 
-        // 3. Clear history timeout
+        // 3. Clear pending timers
+        if (this.readyTimeout) {
+            window.clearTimeout(this.readyTimeout);
+            this.readyTimeout = null;
+        }
         if (this.historyTimeout) {
             window.clearTimeout(this.historyTimeout);
             this.historyTimeout = null;
+        }
+        if (this.statusMessageTimeout) {
+            window.clearTimeout(this.statusMessageTimeout);
+            this.statusMessageTimeout = null;
         }
 
         // 4. Destroy the toolbar (clears document-level table picker click listeners)
@@ -368,7 +382,14 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         // 5. Unsubscribe all Event Emitter handlers
         this.clear();
 
-        // 6. Clear container DOM
+        // 6. Restore global document state and clear DOM
+        if (this.wrapperEl?.classList.contains('is-fullscreen')) {
+            this.wrapperEl.classList.remove('is-fullscreen');
+            document.body.style.overflow = this.previousBodyOverflow;
+            this.previousBodyOverflow = '';
+        }
+
+        this.wrapperEl?.remove();
         this.containerEl.innerHTML = '';
     }
 
@@ -715,13 +736,15 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         const isFullScreen = this.wrapperEl.classList.contains('is-fullscreen');
 
         if (!isFullScreen) {
+            this.previousBodyOverflow = document.body.style.overflow;
             document.body.appendChild(this.wrapperEl);
             this.wrapperEl.classList.add('is-fullscreen');
             document.body.style.overflow = 'hidden';
         } else {
             this.containerEl.appendChild(this.wrapperEl);
             this.wrapperEl.classList.remove('is-fullscreen');
-            document.body.style.overflow = '';
+            document.body.style.overflow = this.previousBodyOverflow;
+            this.previousBodyOverflow = '';
         }
     }
 
@@ -1078,8 +1101,13 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         if (msgEl) {
             msgEl.textContent = msg;
             msgEl.classList.add('is-active');
+            if (this.statusMessageTimeout) {
+                window.clearTimeout(this.statusMessageTimeout);
+                this.statusMessageTimeout = null;
+            }
             if (duration > 0) {
-                setTimeout(() => {
+                this.statusMessageTimeout = window.setTimeout(() => {
+                    this.statusMessageTimeout = null;
                     if (msgEl && msgEl.textContent === msg) {
                         msgEl.textContent = 'Ready';
                         msgEl.classList.remove('is-active');
