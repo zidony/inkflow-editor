@@ -64,8 +64,22 @@ describe('security utilities', () => {
         expect(sanitizeHref('javascript:alert(1)')).toBeNull();
         expect(sanitizeMediaUrl('blob:https://example.com/id')).toBe('blob:https://example.com/id');
         expect(sanitizeMediaUrl('data:text/html;base64,PGgxPkJhZDwvaDE=')).toBeNull();
+        expect(sanitizeMediaUrl('data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=', 'image')).toBeNull();
         expect(sanitizeMediaUrl('data:image/webp;base64,aGVsbG8=', 'image')).toBe(
             'data:image/webp;base64,aGVsbG8='
         );
+    });
+
+    it('hardens iframe embeds with sandboxing and lazy loading', () => {
+        const html = sanitizeHTML(
+            '<iframe src="https://example.com/embed" onload="alert(1)" style="border:0"></iframe>'
+        );
+        const iframe = parseBody(html);
+
+        expect(iframe.getAttribute('src')).toBe('https://example.com/embed');
+        expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-same-origin allow-presentation');
+        expect(iframe.getAttribute('loading')).toBe('lazy');
+        expect(iframe.hasAttribute('onload')).toBe(false);
+        expect(iframe.hasAttribute('style')).toBe(false);
     });
 });

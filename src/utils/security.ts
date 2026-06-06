@@ -54,7 +54,7 @@ const TAG_ATTRIBUTES: Record<string, Set<string>> = {
 
 const HREF_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 const MEDIA_PROTOCOLS = new Set(['http:', 'https:', 'blob:']);
-const IMAGE_DATA_URL_PATTERN = /^data:image\/(?:png|gif|jpe?g|webp|svg\+xml);base64,[a-z0-9+/]+=*$/i;
+const IMAGE_DATA_URL_PATTERN = /^data:image\/(?:png|gif|jpe?g|webp);base64,[a-z0-9+/]+=*$/i;
 
 type UrlKind = 'href' | 'media' | 'image';
 
