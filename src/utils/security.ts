@@ -2,6 +2,7 @@ const BLOCKED_TAGS = new Set(['script', 'style', 'meta', 'object', 'embed', 'lin
 
 const ALLOWED_TAGS = new Set([
     'a',
+    'b',
     'blockquote',
     'br',
     'code',

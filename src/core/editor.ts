@@ -941,13 +941,13 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         // 2. Standardize tags
         body.querySelectorAll('b').forEach(b => {
             const strong = document.createElement('strong');
-            strong.innerHTML = b.innerHTML;
+            this.moveChildNodes(b, strong);
             b.replaceWith(strong);
         });
 
         body.querySelectorAll('i').forEach(i => {
             const em = document.createElement('em');
-            em.innerHTML = i.innerHTML;
+            this.moveChildNodes(i, em);
             i.replaceWith(em);
         });
 
@@ -971,6 +971,12 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         }
 
         return body.innerHTML === '<br>' ? '' : body.innerHTML;
+    }
+
+    private moveChildNodes(from: Element, to: Element): void {
+        while (from.firstChild) {
+            to.appendChild(from.firstChild);
+        }
     }
 
     // ============================================================================

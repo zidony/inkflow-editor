@@ -16,6 +16,12 @@ describe('security utilities', () => {
         expect(html).toBe('<p>Hello<strong>world</strong></p>');
     });
 
+    it('preserves legacy bold and italic tags for output normalization', () => {
+        const html = sanitizeHTML('<p><b>Bold</b> and <i>italic</i></p>');
+
+        expect(html).toBe('<p><b>Bold</b> and <i>italic</i></p>');
+    });
+
     it('strips unsafe attributes from supported elements', () => {
         const html = sanitizeHTML('<p id="x" style="color:red" onclick="alert(1)" title="ok">Text</p>');
         const element = parseBody(html);
