@@ -33,7 +33,7 @@ export default [
         ignores: ['dist/**', 'demo-dist/**', 'node_modules/**', '*.css', '*.html']
     },
     {
-        files: ['src/**/*.ts'],
+        files: ['src/**/*.ts', 'tests/**/*.ts', 'vitest.config.ts'],
         languageOptions: {
             parser: tsParser,
             ecmaVersion: 2023,

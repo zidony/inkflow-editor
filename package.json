@@ -27,9 +27,11 @@
     "build:demo": "vite build -c vite.demo.config.ts",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,js,css,html}\"",
-    "lint": "eslint src",
-    "typecheck": "tsc --noEmit",
-    "check": "npm run lint && npm run typecheck && npm run build",
+    "lint": "eslint src tests vitest.config.ts",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "check": "npm run lint && npm run typecheck && npm run test:run && npm run build",
     "release": "npm run build && node scripts/release.js"
   },
   "devDependencies": {
@@ -38,9 +40,11 @@
     "eslint": "^10.4.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
+    "jsdom": "^29.1.1",
     "prettier": "^3.8.3",
     "typescript": "~6.0.2",
     "vite": "^8.0.12",
-    "vite-plugin-dts": "^5.0.1"
+    "vite-plugin-dts": "^5.0.1",
+    "vitest": "^4.1.8"
   }
 }
