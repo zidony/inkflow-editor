@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { InkflowEditor } from '../src/core/editor';
 
 function createEditor(html = ''): InkflowEditor {
@@ -13,6 +13,7 @@ function createEditor(html = ''): InkflowEditor {
 
 describe('InkflowEditor output normalization', () => {
     afterEach(() => {
+        vi.useRealTimers();
         document.body.innerHTML = '';
     });
 
@@ -119,6 +120,48 @@ describe('InkflowEditor output normalization', () => {
 
         expect(sourceArea.value).toBe('<p><strong>Updated</strong></p>');
         expect(editor.getHTML()).toBe('<p><strong>Updated</strong></p>');
+        editor.destroy();
+    });
+
+    it('emits sanitized source mode changes after textarea input', () => {
+        vi.useFakeTimers();
+        const editor = createEditor('<p>Initial</p>');
+        const sourceButton = document.querySelector<HTMLButtonElement>('[aria-label="Source Code"]');
+        const sourceArea = document.querySelector<HTMLTextAreaElement>('.inkflow-source-area');
+        const changeHandler = vi.fn();
+
+        editor.on('change', changeHandler);
+        sourceButton?.click();
+        if (!sourceArea) {
+            throw new Error('Source editor fixture was not created.');
+        }
+        sourceArea.value = '<p onclick="alert(1)"><b>Changed</b><script>alert(1)</script></p>';
+        sourceArea.dispatchEvent(new Event('input'));
+        vi.advanceTimersByTime(500);
+
+        expect(changeHandler).toHaveBeenLastCalledWith('<p><strong>Changed</strong></p>');
+        editor.destroy();
+    });
+
+    it('keeps source mode undo and redo synchronized with the textarea', () => {
+        vi.useFakeTimers();
+        const editor = createEditor('<p>Initial</p>');
+        const sourceButton = document.querySelector<HTMLButtonElement>('[aria-label="Source Code"]');
+        const sourceArea = document.querySelector<HTMLTextAreaElement>('.inkflow-source-area');
+
+        sourceButton?.click();
+        if (!sourceArea) {
+            throw new Error('Source editor fixture was not created.');
+        }
+        sourceArea.value = '<p>Changed</p>';
+        sourceArea.dispatchEvent(new Event('input'));
+        vi.advanceTimersByTime(500);
+
+        sourceArea.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }));
+        expect(sourceArea.value).toBe('<p>Initial</p>');
+
+        sourceArea.dispatchEvent(new KeyboardEvent('keydown', { key: 'y', ctrlKey: true, bubbles: true }));
+        expect(sourceArea.value).toBe('<p>Changed</p>');
         editor.destroy();
     });
 });

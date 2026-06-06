@@ -459,6 +459,14 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.editorAreaEl.addEventListener('paste', (e: ClipboardEvent) =>
             this.handlePasteEvent(e)
         );
+        this.sourceCodeEl.addEventListener('input', () => {
+            this.setStatusMessage('Editing...', 0);
+            this.debounceSaveHistory();
+            this.updateStatusBar();
+        });
+        this.sourceCodeEl.addEventListener('keydown', (e: KeyboardEvent) =>
+            this.handleShortcuts(e)
+        );
 
         // Drag and Drop Image upload
         const preventNav = (e: DragEvent) => {
@@ -999,6 +1007,10 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      * Gets the HTML of the editor with temporary selection bookmark nodes injected.
      */
     private getSnapshotHTML(): string {
+        if (this.isSourceMode) {
+            return this.formatOutputHTML(sanitizeHTML(this.sourceCodeEl.value));
+        }
+
         const sel = window.getSelection();
         if (!sel || sel.rangeCount === 0 || !this.editorAreaEl.contains(sel.anchorNode)) {
             return this.editorAreaEl.innerHTML;
@@ -1044,6 +1056,14 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      * Sets the HTML of the editor and restores caret selection from bookmarked tags.
      */
     private restoreSnapshot(html: string): void {
+        if (this.isSourceMode) {
+            const formattedHtml = this.formatOutputHTML(sanitizeHTML(html));
+            this.sourceCodeEl.value = formattedHtml;
+            this.editorAreaEl.innerHTML = this.parseEmojiHTML(formattedHtml);
+            this.sourceCodeEl.focus();
+            return;
+        }
+
         this.editorAreaEl.innerHTML = html;
 
         const startBookmark = this.editorAreaEl.querySelector('#inkflow-bookmark-start');
