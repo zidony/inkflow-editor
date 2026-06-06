@@ -216,9 +216,7 @@ export class Toolbar {
             alignRight: 'justifyRight',
             listUl: 'insertUnorderedList',
             listOl: 'insertOrderedList',
-            eraser: 'removeFormat',
-            undo: 'undo',
-            redo: 'redo'
+            eraser: 'removeFormat'
         };
 
         if (command === 'heading' && value) {
@@ -231,6 +229,10 @@ export class Toolbar {
             this.commands.wrapSelectionInInlineCode();
         } else if (command === 'divider') {
             this.commands.insertHorizontalRule();
+        } else if (command === 'undo' || command === 'redo') {
+            const event = new CustomEvent('inkflow-custom-command', { detail: { command } });
+            this.container.dispatchEvent(event);
+            return;
         } else if (commandMap[command]) {
             this.commands.exec(commandMap[command]);
         } else {

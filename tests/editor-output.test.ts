@@ -196,4 +196,19 @@ describe('InkflowEditor output normalization', () => {
         expect(changeHandler).not.toHaveBeenCalled();
         editor.destroy();
     });
+
+    it('uses editor history when toolbar undo and redo buttons are clicked', () => {
+        const editor = createEditor('<p>Initial</p>');
+        const undoButton = document.querySelector<HTMLButtonElement>('[aria-label="Undo"]');
+        const redoButton = document.querySelector<HTMLButtonElement>('[aria-label="Redo"]');
+
+        editor.setHTML('<p>Changed</p>');
+        undoButton?.click();
+
+        expect(editor.getHTML()).toBe('<p>Initial</p>');
+
+        redoButton?.click();
+        expect(editor.getHTML()).toBe('<p>Changed</p>');
+        editor.destroy();
+    });
 });

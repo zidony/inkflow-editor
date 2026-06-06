@@ -704,6 +704,12 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             case 'table':
                 this.insertTable(detail.rows, detail.cols);
                 break;
+            case 'undo':
+                this.performUndo();
+                break;
+            case 'redo':
+                this.performRedo();
+                break;
             case 'emoji':
                 if (detail.value) {
                     if (detail.src) {
