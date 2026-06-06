@@ -1,6 +1,6 @@
 {
   "name": "inkflow-editor",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "type": "module",
   "main": "./dist/inkflow-editor.umd.js",
   "module": "./dist/inkflow-editor.es.js",
@@ -14,7 +14,7 @@
     "./emoji": {
       "import": "./dist/inkflow-editor-emoji.es.js",
       "require": "./dist/inkflow-editor-emoji.umd.js",
-      "types": "./dist/src/emoji.d.ts"
+      "types": "./dist/emoji.d.ts"
     },
     "./style.css": "./dist/inkflow-editor.css"
   },
@@ -23,7 +23,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && vite build --mode emoji",
+    "build": "tsc && vite build && vite build --mode emoji && node scripts/prepare-dist-types.js",
     "build:demo": "vite build -c vite.demo.config.ts",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,js,css,html}\"",
