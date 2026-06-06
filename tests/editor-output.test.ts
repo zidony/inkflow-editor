@@ -185,4 +185,15 @@ describe('InkflowEditor output normalization', () => {
         expect(sourceArea.value).toBe('<p>Changed quickly</p>');
         editor.destroy();
     });
+
+    it('does not emit change when setHTML keeps the same normalized content', () => {
+        const editor = createEditor('<p><b>Initial</b></p>');
+        const changeHandler = vi.fn();
+
+        editor.on('change', changeHandler);
+        editor.setHTML('<p><b>Initial</b></p>');
+
+        expect(changeHandler).not.toHaveBeenCalled();
+        editor.destroy();
+    });
 });

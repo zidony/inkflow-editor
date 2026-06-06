@@ -29,10 +29,11 @@ export class HistoryManager {
      * Overwrites any future redo states if a new edit occurs after an undo.
      * Includes memory management to prevent heap overflow on massive documents.
      * @param html The current HTML state of the editor.
+     * @returns True when a new snapshot is added; false when it is unchanged.
      */
-    public saveSnapshot(html: string): void {
+    public saveSnapshot(html: string): boolean {
         if (this.currentIndex >= 0 && this.stack[this.currentIndex] === html) {
-            return;
+            return false;
         }
 
         if (this.currentIndex < this.stack.length - 1) {
@@ -51,6 +52,8 @@ export class HistoryManager {
             this.stack.shift();
             this.currentIndex--;
         }
+
+        return true;
     }
 
     /**

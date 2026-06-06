@@ -5,7 +5,7 @@ describe('HistoryManager', () => {
     it('starts with an initial snapshot and supports undo and redo', () => {
         const history = new HistoryManager('<p>Initial</p>');
 
-        history.saveSnapshot('<p>Next</p>');
+        expect(history.saveSnapshot('<p>Next</p>')).toBe(true);
 
         expect(history.undo()).toBe('<p>Initial</p>');
         expect(history.undo()).toBeNull();
@@ -16,7 +16,7 @@ describe('HistoryManager', () => {
     it('ignores duplicate snapshots', () => {
         const history = new HistoryManager('<p>Same</p>');
 
-        history.saveSnapshot('<p>Same</p>');
+        expect(history.saveSnapshot('<p>Same</p>')).toBe(false);
 
         expect(history.undo()).toBeNull();
     });

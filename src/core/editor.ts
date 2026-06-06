@@ -337,9 +337,10 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      */
     public setHTML(html: string): void {
         const sanitizedHtml = sanitizeHTML(html);
-        this.editorAreaEl.innerHTML = this.parseEmojiHTML(sanitizedHtml);
+        const formattedHtml = this.formatOutputHTML(sanitizedHtml);
+        this.editorAreaEl.innerHTML = this.parseEmojiHTML(formattedHtml);
         if (this.isSourceMode) {
-            this.sourceCodeEl.value = this.formatOutputHTML(sanitizedHtml);
+            this.sourceCodeEl.value = formattedHtml;
         }
         this.saveHistoryNow();
     }
@@ -349,10 +350,12 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      */
     public saveHistoryNow(): void {
         const snapshotHtml = this.getSnapshotHTML();
-        this.history.saveSnapshot(snapshotHtml);
-        this.emit('change', this.getHTML());
+        const hasChanged = this.history.saveSnapshot(snapshotHtml);
         this.updateStatusBar();
-        this.setStatusMessage('Saved');
+        if (hasChanged) {
+            this.emit('change', this.getHTML());
+            this.setStatusMessage('Saved');
+        }
     }
 
     /**
@@ -786,7 +789,10 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         if (this.historyTimeout) {
             window.clearTimeout(this.historyTimeout);
         }
-        this.historyTimeout = window.setTimeout(() => this.saveHistoryNow(), 500);
+        this.historyTimeout = window.setTimeout(() => {
+            this.historyTimeout = null;
+            this.saveHistoryNow();
+        }, 500);
     }
 
     private flushPendingHistory(): void {
