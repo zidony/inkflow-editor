@@ -164,4 +164,25 @@ describe('InkflowEditor output normalization', () => {
         expect(sourceArea.value).toBe('<p>Changed</p>');
         editor.destroy();
     });
+
+    it('flushes pending source edits before undo', () => {
+        vi.useFakeTimers();
+        const editor = createEditor('<p>Initial</p>');
+        const sourceButton = document.querySelector<HTMLButtonElement>('[aria-label="Source Code"]');
+        const sourceArea = document.querySelector<HTMLTextAreaElement>('.inkflow-source-area');
+
+        sourceButton?.click();
+        if (!sourceArea) {
+            throw new Error('Source editor fixture was not created.');
+        }
+        sourceArea.value = '<p>Changed quickly</p>';
+        sourceArea.dispatchEvent(new Event('input'));
+
+        sourceArea.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }));
+
+        expect(sourceArea.value).toBe('<p>Initial</p>');
+        sourceArea.dispatchEvent(new KeyboardEvent('keydown', { key: 'y', ctrlKey: true, bubbles: true }));
+        expect(sourceArea.value).toBe('<p>Changed quickly</p>');
+        editor.destroy();
+    });
 });

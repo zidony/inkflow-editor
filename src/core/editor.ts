@@ -789,7 +789,16 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.historyTimeout = window.setTimeout(() => this.saveHistoryNow(), 500);
     }
 
+    private flushPendingHistory(): void {
+        if (!this.historyTimeout) return;
+
+        window.clearTimeout(this.historyTimeout);
+        this.historyTimeout = null;
+        this.saveHistoryNow();
+    }
+
     private performUndo(): void {
+        this.flushPendingHistory();
         const prev = this.history.undo();
         if (prev !== null) {
             this.restoreSnapshot(prev);
@@ -800,6 +809,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     }
 
     private performRedo(): void {
+        this.flushPendingHistory();
         const next = this.history.redo();
         if (next !== null) {
             this.restoreSnapshot(next);
