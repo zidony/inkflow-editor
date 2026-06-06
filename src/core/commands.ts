@@ -14,8 +14,12 @@ export class CommandAdapter {
     }
 
     public exec(command: string, value: string = ''): boolean {
-        this.focus();
-        return document.execCommand(command, false, value);
+        try {
+            this.focus();
+            return document.execCommand(command, false, value);
+        } catch {
+            return false;
+        }
     }
 
     public insertHTML(html: string): boolean {

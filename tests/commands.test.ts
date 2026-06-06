@@ -36,6 +36,19 @@ describe('CommandAdapter', () => {
         window.getSelection()?.removeAllRanges();
     });
 
+    it('returns false when a legacy command is not supported', () => {
+        const editor = createEditor('<p>Text</p>');
+        const originalExecCommand = document.execCommand;
+        document.execCommand = () => {
+            throw new Error('unsupported command');
+        };
+
+        const commands = new CommandAdapter(editor);
+
+        expect(commands.exec('bold')).toBe(false);
+        document.execCommand = originalExecCommand;
+    });
+
     it('inserts HTML at the current selection and moves the caret after inserted content', () => {
         const editor = createEditor('<p>Hello world</p>');
         const textNode = editor.querySelector('p')?.firstChild as Text;
