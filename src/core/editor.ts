@@ -322,6 +322,12 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      * @returns The plain text string.
      */
     public getText(): string {
+        if (this.isSourceMode) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(sanitizeHTML(this.sourceCodeEl.value), 'text/html');
+            return doc.body.innerText || doc.body.textContent || '';
+        }
+
         return this.editorAreaEl.innerText || this.editorAreaEl.textContent || '';
     }
 

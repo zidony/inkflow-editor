@@ -71,4 +71,19 @@ describe('InkflowEditor output normalization', () => {
         expect(editor.getHTML()).toBe('<p><strong>Safe</strong></p>');
         editor.destroy();
     });
+
+    it('reads plain text from sanitized source mode HTML', () => {
+        const editor = createEditor('<p>Initial</p>');
+        const sourceButton = document.querySelector<HTMLButtonElement>('[aria-label="Source Code"]');
+        const sourceArea = document.querySelector<HTMLTextAreaElement>('.inkflow-source-area');
+
+        sourceButton?.click();
+        if (!sourceArea) {
+            throw new Error('Source editor fixture was not created.');
+        }
+        sourceArea.value = '<p>Hello <script>alert(1)</script><strong>source</strong></p>';
+
+        expect(editor.getText()).toBe('Hello source');
+        editor.destroy();
+    });
 });
