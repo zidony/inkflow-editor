@@ -686,16 +686,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             case 'emoji':
                 if (detail.value) {
                     if (detail.src) {
-                        const img = document.createElement('img');
-                        img.src = detail.src;
-                        img.alt = detail.value;
-                        img.className = 'inkflow-emoji';
-                        img.loading = 'lazy';
-                        img.draggable = false;
-                        const wrapper = document.createElement('span');
-                        wrapper.appendChild(img);
-                        wrapper.appendChild(document.createTextNode('\u00A0'));
-                        this.commands.insertHTML(wrapper.innerHTML);
+                        this.commands.insertEmojiImage(detail.value, detail.src);
                     } else {
                         this.commands.insertText(detail.value);
                     }

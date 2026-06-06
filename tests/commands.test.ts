@@ -97,6 +97,24 @@ describe('CommandAdapter', () => {
         expect(image?.getAttribute('alt')).toBe('image');
     });
 
+    it('inserts an emoji image with trailing spacing', () => {
+        const editor = createEditor('<p>Before </p>');
+        const paragraph = editor.querySelector('p') as HTMLParagraphElement;
+        placeCaretAtEnd(paragraph);
+
+        const commands = new CommandAdapter(editor);
+        commands.insertEmojiImage('😀', '/emoji.svg');
+
+        const image = editor.querySelector('img');
+        expect(image?.className).toBe('inkflow-emoji');
+        expect(image?.getAttribute('alt')).toBe('😀');
+        expect(image?.getAttribute('loading')).toBe('lazy');
+        expect(image?.draggable).toBe(false);
+        expect(editor.innerHTML).toBe(
+            '<p>Before <img src="/emoji.svg" alt="😀" class="inkflow-emoji" loading="lazy" draggable="false">&nbsp;</p>'
+        );
+    });
+
     it('inserts a video element at the caret', () => {
         const editor = createEditor('<p>Before </p>');
         const paragraph = editor.querySelector('p') as HTMLParagraphElement;
@@ -164,6 +182,31 @@ describe('CommandAdapter', () => {
             '<p>Before</p><pre><code>// Paste your code here...</code></pre><p><br></p>'
         );
         expect(window.getSelection()?.isCollapsed).toBe(true);
+        expect(code?.contains(window.getSelection()?.anchorNode || null)).toBe(true);
+    });
+
+    it('wraps selected text in inline code', () => {
+        const editor = createEditor('<p>Hello code</p>');
+        const textNode = editor.querySelector('p')?.firstChild as Text;
+        selectText(textNode, 6, 10);
+
+        const commands = new CommandAdapter(editor);
+        commands.wrapSelectionInInlineCode();
+
+        expect(editor.innerHTML).toBe('<p>Hello <code>code</code></p>');
+        expect(window.getSelection()?.isCollapsed).toBe(true);
+    });
+
+    it('inserts an empty inline code token at the caret', () => {
+        const editor = createEditor('<p>Hello </p>');
+        const paragraph = editor.querySelector('p') as HTMLParagraphElement;
+        placeCaretAtEnd(paragraph);
+
+        const commands = new CommandAdapter(editor);
+        commands.wrapSelectionInInlineCode();
+
+        const code = editor.querySelector('code');
+        expect(code?.textContent).toBe('\u200B');
         expect(code?.contains(window.getSelection()?.anchorNode || null)).toBe(true);
     });
 

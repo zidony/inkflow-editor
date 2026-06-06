@@ -56,6 +56,20 @@ export class CommandAdapter {
         return this.insertNode(image);
     }
 
+    public insertEmojiImage(emoji: string, src: string): boolean {
+        const fragment = document.createDocumentFragment();
+        const image = document.createElement('img');
+        image.src = src;
+        image.alt = emoji;
+        image.className = 'inkflow-emoji';
+        image.setAttribute('loading', 'lazy');
+        image.draggable = false;
+
+        fragment.appendChild(image);
+        fragment.appendChild(document.createTextNode('\u00A0'));
+        return this.insertFragment(fragment, image);
+    }
+
     public insertVideo(url: string): boolean {
         const video = document.createElement('video');
         video.src = url;
@@ -99,6 +113,27 @@ export class CommandAdapter {
         this.insertBlockNodes([pre, paragraph]);
         this.focus();
         this.placeCaretAtEnd(code);
+        return true;
+    }
+
+    public wrapSelectionInInlineCode(): boolean {
+        const range = this.getActiveRange();
+        if (!range) return false;
+
+        const code = document.createElement('code');
+        const selectedText = range.toString();
+        code.textContent = selectedText || '\u200B';
+
+        range.deleteContents();
+        range.insertNode(code);
+        this.focus();
+
+        if (selectedText) {
+            this.placeCaretAfter(code);
+        } else {
+            this.placeCaretAtEnd(code);
+        }
+
         return true;
     }
 

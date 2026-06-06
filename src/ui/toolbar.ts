@@ -228,24 +228,7 @@ export class Toolbar {
             const targetBlock = currentBlock === 'blockquote' ? 'p' : 'blockquote';
             this.commands.formatBlock(targetBlock);
         } else if (command === 'inlineCode') {
-            const selection = window.getSelection();
-            if (selection && selection.toString()) {
-                const codeNode = document.createElement('code');
-                codeNode.textContent = selection.toString();
-                const wrapper = document.createElement('span');
-                wrapper.appendChild(codeNode);
-                this.commands.insertHTML(wrapper.innerHTML);
-            } else if (selection && selection.rangeCount > 0) {
-                // If no text is selected, create an empty code block and place the cursor inside it
-                const codeNode = document.createElement('code');
-                codeNode.textContent = '\u200B';
-                const range = selection.getRangeAt(0);
-                range.insertNode(codeNode);
-                range.setStart(codeNode, 1);
-                range.collapse(true);
-                selection.removeAllRanges();
-                selection.addRange(range);
-            }
+            this.commands.wrapSelectionInInlineCode();
         } else if (command === 'divider') {
             this.commands.insertHorizontalRule();
         } else if (commandMap[command]) {
