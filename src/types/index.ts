@@ -95,7 +95,7 @@ export interface EditorInstance {
     destroy(): void;
 
     // Event Bus
-    on(event: string, handler: (...args: any[]) => void): void;
-    off(event: string, handler: (...args: any[]) => void): void;
-    emit(event: string, ...args: any[]): void;
+    on(event: string, handler: (...args: unknown[]) => void): void;
+    off(event: string, handler: (...args: unknown[]) => void): void;
+    emit(event: string, ...args: unknown[]): void;
 }

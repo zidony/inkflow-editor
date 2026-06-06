@@ -2,6 +2,12 @@ import './inkflow-editor.css';
 import { InkflowEditor } from './core/editor';
 import { emojiExtension } from './emoji';
 
+declare global {
+    interface Window {
+        editor: InkflowEditor;
+    }
+}
+
 /**
  * Development Entry Point
  * Used for local testing and debugging of the editor instance.
@@ -59,4 +65,4 @@ const editor = new InkflowEditor({
 editor.setHTML('<h3>Hello Inkflow!</h3><p>This is a pure Vanilla JS editor.</p>');
 
 // Expose editor instance to global window for browser console testing
-(window as any).editor = editor;
+window.editor = editor;

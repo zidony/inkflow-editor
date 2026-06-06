@@ -1,4 +1,4 @@
-type EventHandler = (...args: any[]) => void;
+type EventHandler = (...args: unknown[]) => void;
 
 /**
  * A lightweight Pub/Sub Event Emitter for managing editor lifecycle and action events.
@@ -34,7 +34,7 @@ export class EventEmitter {
      * @param event The event name.
      * @param args Arguments to pass to the handlers.
      */
-    public emit(event: string, ...args: any[]): void {
+    public emit(event: string, ...args: unknown[]): void {
         if (this.events.has(event)) {
             for (const handler of this.events.get(event)!) {
                 try {
