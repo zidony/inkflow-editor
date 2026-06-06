@@ -51,12 +51,15 @@
 
     <!-- 引入编译后的 UMD 脚本 -->
     <script src="../dist/inkflow-editor.umd.js"></script>
+    <script src="../dist/inkflow-editor-emoji.umd.js"></script>
     <script>
         const { InkflowEditor } = window.InkflowEditor;
+        const { emojiExtension } = window.InkflowEditorEmoji;
         const editor = new InkflowEditor({
             container: '#editor-container',
             lang: 'zh-CN',
             placeholder: '请在此输入您的精彩内容...',
+            emoji: emojiExtension(),
             hooks: {
                 onUploadImage: async (file) => {
                     return new Promise((resolve) => {

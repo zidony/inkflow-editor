@@ -1,6 +1,5 @@
-import type { ThemeClasses, InkflowOptions, LocaleDict } from '../types/index';
+import type { EmojiExtension, ThemeClasses, InkflowOptions, LocaleDict } from '../types/index';
 import { icons } from './icons';
-import { EmojiPicker } from './emoji-picker';
 import { sanitizeHTML, sanitizeHref, sanitizeMediaUrl } from '../utils/security';
 import type { CommandAdapter } from '../core/commands';
 
@@ -18,6 +17,7 @@ export class Toolbar {
     private config: Array<string | string[]>;
     private locale: LocaleDict;
     private commands: CommandAdapter;
+    private emojiExtension?: EmojiExtension;
     private hooks?: InkflowOptions['hooks'];
 
     private buttonElements: Map<string, HTMLButtonElement | HTMLElement> = new Map();
@@ -37,6 +37,7 @@ export class Toolbar {
         config: Array<string | string[]>,
         locale: LocaleDict,
         commands: CommandAdapter,
+        emojiExtension?: EmojiExtension,
         hooks?: InkflowOptions['hooks']
     ) {
         this.container = container;
@@ -45,6 +46,7 @@ export class Toolbar {
         this.config = config;
         this.locale = locale;
         this.commands = commands;
+        this.emojiExtension = emojiExtension;
         this.hooks = hooks;
 
         this.render();
@@ -70,6 +72,8 @@ export class Toolbar {
             groupArr.forEach(itemName => {
                 if (itemName === 'heading') {
                     groupEl.appendChild(this.createHeadingSelect());
+                } else if (itemName === 'emoji' && !this.emojiExtension) {
+                    return;
                 } else if (icons[itemName]) {
                     groupEl.appendChild(this.createButton(itemName));
                 }
@@ -115,7 +119,7 @@ export class Toolbar {
         if (btnName === 'table') {
             return this.createTablePickerButton(btnName);
         }
-        if (btnName === 'emoji') {
+        if (btnName === 'emoji' && this.emojiExtension) {
             return this.createEmojiPickerButton(btnName);
         }
 
@@ -458,19 +462,19 @@ export class Toolbar {
         this.buttonElements.set(btnName, btnEl);
         wrapper.appendChild(btnEl);
 
-        new EmojiPicker(
+        this.emojiExtension?.mountPicker({
             wrapper,
-            btnEl,
-            this.theme,
-            this.locale,
-            this.cleanupFnList,
-            (emoji, src) => {
+            button: btnEl,
+            theme: this.theme,
+            locale: this.locale,
+            cleanup: this.cleanupFnList,
+            onSelect: (emoji, src) => {
                 const event = new CustomEvent('inkflow-custom-command', {
                     detail: { command: 'emoji', value: emoji, src }
                 });
                 this.container.dispatchEvent(event);
             }
-        );
+        });
 
         return wrapper;
     }

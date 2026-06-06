@@ -4,7 +4,6 @@ import { inkflowTheme } from '../themes/inkflow';
 import { HistoryManager } from './history';
 import { enUS } from '../locales/en-US';
 import { zhCN } from '../locales/zh-CN';
-import { parseEmojisToHTML } from '../ui/emojis';
 import { sanitizeHTML, sanitizeMediaUrl } from '../utils/security';
 
 import { CommandAdapter } from './commands';
@@ -99,7 +98,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         
         // Inject the initial HTML.
         if (initialHtml) {
-            this.editorAreaEl.innerHTML = parseEmojisToHTML(initialHtml);
+            this.editorAreaEl.innerHTML = this.parseEmojiHTML(initialHtml);
         }
 
         this.wrapperEl.appendChild(this.toolbarEl);
@@ -279,7 +278,9 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             ['bold', 'italic', 'underline', 'strike', 'inlineCode', 'eraser'],
             ['alignLeft', 'alignCenter', 'alignRight'],
             ['listUl', 'listOl'],
-            ['link', 'image', 'video', 'codeBlock', 'blockquote', 'table', 'divider', 'emoji'],
+            this.options.emoji
+                ? ['link', 'image', 'video', 'codeBlock', 'blockquote', 'table', 'divider', 'emoji']
+                : ['link', 'image', 'video', 'codeBlock', 'blockquote', 'table', 'divider'],
             ['undo', 'redo'],
             ['sourceCode', 'fullscreen']
         ];
@@ -292,6 +293,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             toolbarConfig,
             this.locale,
             this.commands,
+            this.options.emoji,
             this.options.hooks
         );
     }
@@ -322,7 +324,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      * @param html The HTML string to inject.
      */
     public setHTML(html: string): void {
-        this.editorAreaEl.innerHTML = parseEmojisToHTML(sanitizeHTML(html));
+        this.editorAreaEl.innerHTML = this.parseEmojiHTML(sanitizeHTML(html));
         this.saveHistoryNow();
     }
 
@@ -698,7 +700,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.sourceCodeEl.style.display = 'block';
             this.toolbarInstance.setDisabled(true);
         } else {
-            this.editorAreaEl.innerHTML = parseEmojisToHTML(sanitizeHTML(this.sourceCodeEl.value));
+            this.editorAreaEl.innerHTML = this.parseEmojiHTML(sanitizeHTML(this.sourceCodeEl.value));
             // Sync height so if user resized source editor, visual editor matches
             this.editorAreaEl.style.height = `${this.sourceCodeEl.offsetHeight}px`;
             
@@ -908,6 +910,10 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     // ============================================================================
     // Utilities
     // ============================================================================
+    private parseEmojiHTML(html: string): string {
+        return this.options.emoji?.parseHTML ? this.options.emoji.parseHTML(html) : html;
+    }
+
     /**
      * Processes editor HTML to ensure standard tags (e.g., strong instead of b)
      * and removes empty formatting blocks.

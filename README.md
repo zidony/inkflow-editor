@@ -1,123 +1,189 @@
 # Inkflow Editor
 
-**🇬🇧 English Documentation** | [🇨🇳 中文文档](README.zh-CN.md)
+**English** | [简体中文](README.zh-CN.md)
 
-Inkflow Editor is a lightweight, high-performance, and commercial-grade WYSIWYG rich text editor built with pure Vanilla JavaScript (TypeScript). It relies on zero external dependencies and is designed for modern web applications.
+Inkflow Editor is a lightweight rich text editor built with vanilla TypeScript. It provides a visual editing surface, a configurable toolbar, basic Markdown shortcuts, image upload hooks, source editing, and a small public API for use in modern web applications.
 
-**[🚀 Live Demo](https://zidony.github.io/inkflow-editor/)**
+[Live Demo](https://zidony.github.io/inkflow-editor/)
 
-## ✨ Features
+## Project Status
 
-- **Zero Dependencies**: Pure Vanilla JS, extremely lightweight (`< 30KB` gzipped).
-- **Zero-Dependency Build Toolchain**: Native Node.js zip packager using built-in `zlib` and `fs`, completely removing bulky npm dependencies like `archiver` or `adm-zip`.
-- **World-Class Architecture**: Built on a robust Pub/Sub `EventEmitter` for elegant lifecycle hooks. Memory-safe design detaches all global `window`/`document` listeners upon `destroy()`.
-- **Caret Selection Preservation**: Temporary DOM Bookmarking preserves exact cursor/caret position on Undo and Redo actions seamlessly.
-- **Bottom Status Bar**: Dedicated status bar reporting word/character metrics, current mode, and dynamic flash badges ("Saved", "Undo", "Redo").
-- **Design System Ready**: Fully powered by CSS variables. Supports **`sm` / `md` / `lg`** scale adjustments for menu and relative-em icons seamlessly.
-- **Notion-Style Uploads**: Intercepts `Ctrl+V` and Drag & Drop to automatically render pulsing skeleton loaders while uploading.
-- **Image Drag-to-Resize**: Professional-grade, non-intrusive handlings for image selection and seamless dragging to resize.
-- **Efficient Markdown Shortcuts**: Instantly converts `**bold**`, `*italic*`, and `` `code` `` on the fly. Added block support for **ordered lists (`1. `)**, **horizontal dividers (`---`)**, and **code blocks (` ``` `)**.
-- **Offline Emoji Picker**: Fully bundled Twemoji integration with category tabs. SVGs are inlined locally to guarantee zero network requests while ensuring data is safely stored as pure Unicode (`<img>` tags are never persisted).
-- **Memory Optimized**: Smart History Stack with dynamic byte-size capping prevents browser OOM on massive documents.
-- **Accessibility (A11y)**: WCAG 2.1 compliant with native ARIA tags and keyboard support.
+Inkflow Editor is under active development. It is suitable for lightweight editing use cases such as forms, comments, notes, and simple CMS fields.
 
-## 📦 Installation
+For complex editing requirements such as collaborative editing, advanced table workflows, strict document schemas, block-based documents, or plugin ecosystems, a model-driven editor framework may be a better fit.
 
-Since it has zero dependencies, you can simply use the compiled UMD or ES module versions directly in your project.
+## Features
 
-```html
-<!-- Import CSS -->
-<link rel="stylesheet" href="path/to/inkflow-editor.css" />
+- Vanilla TypeScript implementation with no runtime framework dependency.
+- Visual WYSIWYG editing based on `contenteditable`.
+- Configurable toolbar with formatting, alignment, lists, links, media, tables, source mode, fullscreen mode, and optional emoji.
+- Basic Markdown shortcuts for inline formatting, headings, blockquotes, lists, dividers, and code blocks.
+- Undo and redo history with caret restoration.
+- Paste sanitization and URL validation for common editing flows.
+- Image upload hooks for pasted or dropped image files.
+- Click-to-select image resizing.
+- Source code mode for editing sanitized HTML.
+- English and Simplified Chinese locale support.
+- Theme customization through CSS variables and class mappings.
 
-<!-- Import JS -->
-<script src="path/to/inkflow-editor.umd.js"></script>
+## Install
+
+```bash
+npm install inkflow-editor
 ```
 
-## 🚀 Quick Start
+```ts
+import { InkflowEditor } from 'inkflow-editor';
+import 'inkflow-editor/style.css';
+
+const editor = new InkflowEditor({
+    container: '#editor',
+    lang: 'en-US',
+    placeholder: 'Start writing...'
+});
+```
+
+You can also use the UMD build in a plain HTML page:
 
 ```html
-<div id="editor-container"></div>
+<link rel="stylesheet" href="dist/inkflow-editor.css" />
 
+<div id="editor"></div>
+
+<script src="dist/inkflow-editor.umd.js"></script>
 <script>
+    const { InkflowEditor } = window.InkflowEditor;
+
     const editor = new InkflowEditor({
-        container: '#editor-container',
-        lang: 'en-US',
-        placeholder: 'Start writing your amazing content here...'
-    });
-
-    // Listen to lifecycle events
-    editor.on('ready', () => {
-        console.log('Editor is ready!');
-    });
-
-    editor.on('change', html => {
-        console.log('Content changed:', html);
+        container: '#editor',
+        lang: 'en-US'
     });
 </script>
 ```
 
-## 🎨 Theming & Dark Mode
+## Optional Emoji Extension
 
-Inkflow uses CSS variables. To change the primary color or build a dark theme, simply override the root variables in your own CSS:
+Emoji support is shipped as an optional entry so the main editor bundle stays small. Import it only when the emoji picker is needed:
 
-```css
-:root {
-    /* Override Primary Color */
-    --inkflow-primary: #10b981;
-    --inkflow-primary-light: #d1fae5;
-}
+```ts
+import { InkflowEditor } from 'inkflow-editor';
+import { emojiExtension } from 'inkflow-editor/emoji';
+import 'inkflow-editor/style.css';
 
-/* Dark Mode Example */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --inkflow-bg-main: #1f2937;
-        --inkflow-text-main: #f9fafb;
-        --inkflow-bg-toolbar: #111827;
-        --inkflow-border: #374151;
-    }
-}
-```
-
-## 📖 API Reference
-
-### Constructor Options
-
-```typescript
 const editor = new InkflowEditor({
-    container: '#editor', // String selector or HTMLElement
-    lang: 'en-US', // 'en-US' or 'zh-CN'
-    placeholder: 'Type...', // Empty state text
-    height: '500px', // Optional fixed height
-    size: 'md', // Size variant: 'sm' (small menu and icons), 'md' (medium, default), 'lg' (large)
-    theme: inkflowTheme // Optional custom theme classes
+    container: '#editor',
+    emoji: emojiExtension()
 });
 ```
 
-### Public Methods
+For plain HTML or PHP-rendered pages, include the emoji UMD file after the core editor:
 
-- `editor.getHTML()`: Returns the rich text HTML string.
-- `editor.getText()`: Returns the plain text content.
-- `editor.setHTML(html)`: Replaces the editor's content programmatically.
-- `editor.destroy()`: Cleans up the DOM and event listeners.
+```html
+<link rel="stylesheet" href="dist/inkflow-editor.css" />
 
-### Events
+<div id="editor"></div>
 
-- `editor.on('ready', (editor) => {})`
-- `editor.on('change', (html) => {})`
-- `editor.on('focus', () => {})`
-- `editor.on('blur', () => {})`
+<script src="dist/inkflow-editor.umd.js"></script>
+<script src="dist/inkflow-editor-emoji.umd.js"></script>
+<script>
+    const { InkflowEditor } = window.InkflowEditor;
+    const { emojiExtension } = window.InkflowEditorEmoji;
 
-## 💻 Browser Support
+    const editor = new InkflowEditor({
+        container: '#editor',
+        emoji: emojiExtension()
+    });
+</script>
+```
 
-Supports all modern browsers (Chrome, Edge, Firefox, Safari). Internet Explorer is NOT supported.
+## Options
 
-## 🛠️ Build from Source
+```ts
+const editor = new InkflowEditor({
+    container: '#editor',
+    lang: 'en-US',
+    placeholder: 'Start writing...',
+    height: '500px',
+    size: 'md',
+    toolbar: [
+        ['heading'],
+        ['bold', 'italic', 'underline'],
+        ['link', 'image', 'table'],
+        ['undo', 'redo']
+    ]
+});
+```
+
+| Option | Type | Description |
+| --- | --- | --- |
+| `container` | `HTMLElement \| string` | Target element or selector. |
+| `theme` | `'inkflow' \| ThemeClasses` | Built-in theme or custom class map. |
+| `size` | `'sm' \| 'md' \| 'lg'` | Editor size variant. |
+| `toolbar` | `Array<string \| string[]>` | Toolbar layout. |
+| `placeholder` | `string` | Placeholder text for an empty editor. |
+| `lang` | `'en-US' \| 'zh-CN' \| LocaleDict` | Built-in or custom locale. |
+| `height` | `string` | CSS height for the editing area. |
+| `emoji` | `EmojiExtension` | Optional emoji picker extension from `inkflow-editor/emoji`. |
+| `hooks` | `object` | Async hooks for links, images, uploads, and videos. |
+
+## Hooks
+
+```ts
+const editor = new InkflowEditor({
+    container: '#editor',
+    hooks: {
+        onInsertLink: async () => 'https://example.com',
+        onInsertImage: async () => 'https://example.com/image.png',
+        onInsertVideo: async () => 'https://example.com/video.mp4',
+        onUploadImage: async file => {
+            // Upload the file and return a public image URL.
+            return uploadImage(file);
+        }
+    }
+});
+```
+
+## API
+
+```ts
+editor.getHTML();
+editor.getText();
+editor.setHTML('<p>Hello</p>');
+editor.destroy();
+
+editor.on('ready', instance => {});
+editor.on('change', html => {});
+editor.on('focus', () => {});
+editor.on('blur', () => {});
+```
+
+## Security Notes
+
+Inkflow Editor sanitizes HTML before it enters key editing flows such as initialization, `setHTML`, paste, source mode, and media insertion. It also validates common link and media URL protocols.
+
+Applications should still validate and sanitize content on the server before storing or rendering it. Client-side sanitization is a useful editing safeguard, not a replacement for backend content security.
+
+## Browser Support
+
+Inkflow Editor targets modern browsers: Chrome, Edge, Firefox, and Safari. Internet Explorer is not supported.
+
+The editor currently uses browser editing APIs through a centralized command adapter. This keeps compatibility work localized while the project gradually replaces higher-risk commands with direct DOM and Selection operations.
+
+## Development
 
 ```bash
 npm install
+npm run lint
+npm run typecheck
 npm run build
 ```
 
-## 📄 License
+Run the full local check:
 
-MIT License
+```bash
+npm run check
+```
+
+## License
+
+MIT

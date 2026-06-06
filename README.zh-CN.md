@@ -1,123 +1,189 @@
 # Inkflow Editor
 
-[🇬🇧 English Documentation](README.md) | **🇨🇳 中文文档**
+[English](README.md) | **简体中文**
 
-Inkflow Editor 是一款基于原生 JavaScript (TypeScript) 打造的轻量级、高性能、商业级富文本编辑器。它**零依赖**任何第三方框架，专为现代 Web 应用程序设计。
+Inkflow Editor 是一款基于原生 TypeScript 开发的轻量级富文本编辑器。它提供可视化编辑区域、可配置工具栏、基础 Markdown 快捷输入、图片上传 Hook、源码模式，以及适合现代 Web 应用集成的基础 API。
 
-**[🚀 在线演示 (Live Demo)](https://zidony.github.io/inkflow-editor/)**
+[在线演示](https://zidony.github.io/inkflow-editor/)
 
-## ✨ 核心特性
+## 项目状态
 
-- **极致轻量 (零依赖)**：纯原生实现，极度轻量。
-- **纯净的零依赖构建链**：使用 Node.js 原生的 `zlib` 和 `fs` 实现的底层 ZIP 打包脚本，彻底消灭了诸如 `archiver`、`adm-zip` 等多余的构建依赖。
-- **现代工程化架构 (SPA 安全)**：底层基于 Pub/Sub `EventEmitter`，提供极其优雅的 Hook 体系。采用内存安全设计，`destroy()` 时彻底解绑全部全局事件，完美适配 React/Vue 等单页路由应用。
-- **撤销/重做光标保留**：首创 DOM 临时书签标记技术，完美还原撤销/重做时光标与选区的精确位置，避免输入断流。
-- **高颜值底部状态栏**：新增底部状态栏，支持当前编辑模式显示、字符数与词数实时统计、以及“已保存/Undo/Redo”等动态状态灯闪烁提示。
-- **企业级设计系统**：UI 完全由 CSS Variables 驱动，只需一行 CSS 即可替换主题色，支持 **`sm` / `md` / `lg`** 三种尺寸无极缩放。
-- **无感图片上传管线**：全面拦截 `Ctrl+V` 粘贴与文件拖拽，自动注入跳动的骨架屏动画，体验比肩 Notion。
-- **专业级图片缩放**：采用无侵入式浮动手柄，完美支持图片点击选中及拖拉手柄无极缩放。
-- **高效 Markdown 解析**：输入空格瞬间自动解析 `**粗体**`、`*斜体*`、`` `代码` ``，以及新增支持 **有序列表 (`1. `)**、**分割线 (`--- `)** 和 **代码块 (` ``` `)**。
-- **离线原生 Emoji 支持**：内置 300+ 常用表情符号并支持分类 Tab 切换。所有 SVG 素材全部内联打包，确保 100% 离线使用；同时数据流转完美剥离 `<img>` 标签，仅向数据库持久化纯正的 Unicode 字符。
-- **防 OOM 内存优化**：智能历史记录管理器，基于动态字节容量检测，完美解决大文档导致的内存溢出崩溃。
-- **无障碍访问 (A11y)**：严格遵循 WCAG 2.1 标准，提供完善的 ARIA 标签与键盘支持。
+Inkflow Editor 仍在持续开发中。它适合表单、评论、笔记、简单 CMS 字段等轻量富文本编辑场景。
 
-## 📦 安装
+如果你的业务需要协同编辑、复杂表格、严格文档 Schema、块级文档结构或大型插件生态，基于编辑模型的成熟编辑器框架可能更合适。
 
-由于本编辑器零依赖，您可以直接在项目中引入编译后的 UMD 脚本或 ES 模块。
+## 功能
 
-```html
-<!-- 引入样式 -->
-<link rel="stylesheet" href="path/to/inkflow-editor.css" />
+- 基于原生 TypeScript 实现，不依赖运行时前端框架。
+- 基于 `contenteditable` 的可视化富文本编辑。
+- 可配置工具栏，支持格式、对齐、列表、链接、媒体、表格、源码模式、全屏模式和可选 emoji。
+- 基础 Markdown 快捷输入，支持行内格式、标题、引用、列表、分割线和代码块。
+- 支持撤销/重做，并尽量恢复光标位置。
+- 对常见编辑入口进行 HTML 清洗和 URL 校验。
+- 支持粘贴或拖拽图片文件，并通过 Hook 接入上传逻辑。
+- 支持点击选择图片并拖拽调整尺寸。
+- 支持源码模式，可编辑经过清洗的 HTML。
+- 内置英文和简体中文语言包。
+- 支持通过 CSS 变量和 class 映射定制主题。
 
-<!-- 引入脚本 -->
-<script src="path/to/inkflow-editor.umd.js"></script>
+## 安装
+
+```bash
+npm install inkflow-editor
 ```
 
-## 🚀 快速上手
+```ts
+import { InkflowEditor } from 'inkflow-editor';
+import 'inkflow-editor/style.css';
+
+const editor = new InkflowEditor({
+    container: '#editor',
+    lang: 'zh-CN',
+    placeholder: '开始输入...'
+});
+```
+
+也可以在普通 HTML 页面中使用 UMD 构建：
 
 ```html
-<div id="editor-container"></div>
+<link rel="stylesheet" href="dist/inkflow-editor.css" />
 
+<div id="editor"></div>
+
+<script src="dist/inkflow-editor.umd.js"></script>
 <script>
+    const { InkflowEditor } = window.InkflowEditor;
+
     const editor = new InkflowEditor({
-        container: '#editor-container',
-        lang: 'zh-CN',
-        placeholder: '在这里开始编写精彩的内容...'
-    });
-
-    // 监听生命周期事件
-    editor.on('ready', () => {
-        console.log('编辑器加载完毕！');
-    });
-
-    editor.on('change', html => {
-        console.log('内容发生变更:', html);
+        container: '#editor',
+        lang: 'zh-CN'
     });
 </script>
 ```
 
-## 🎨 主题与暗黑模式
+## 可选 Emoji 扩展
 
-Inkflow 完全由 CSS 变量驱动。如果想修改品牌主色调或实现暗黑模式，只需在您的项目 CSS 中覆盖这些变量：
+Emoji 功能以可选入口发布，这样主编辑器包可以保持较小体积。只有需要 emoji 选择器时再导入：
 
-```css
-:root {
-    /* 覆盖品牌主色调 */
-    --inkflow-primary: #10b981;
-    --inkflow-primary-light: #d1fae5;
-}
+```ts
+import { InkflowEditor } from 'inkflow-editor';
+import { emojiExtension } from 'inkflow-editor/emoji';
+import 'inkflow-editor/style.css';
 
-/* 暗黑模式配置示例 */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --inkflow-bg-main: #1f2937;
-        --inkflow-text-main: #f9fafb;
-        --inkflow-bg-toolbar: #111827;
-        --inkflow-border: #374151;
-    }
-}
-```
-
-## 📖 API 参考文档
-
-### 实例化选项 (Options)
-
-```typescript
 const editor = new InkflowEditor({
-    container: '#editor', // 选择器字符串或 HTMLElement
-    lang: 'zh-CN', // 语言，支持 'zh-CN' 或 'en-US'
-    placeholder: '开始输入...', // 占位符提示文字
-    height: '500px', // 可选的固定高度
-    size: 'md', // 尺寸缩放，可选 'sm' (小菜单与小图标)、'md' (中)、'lg' (大)
-    theme: inkflowTheme // 可选的自定义主题 Class 映射
+    container: '#editor',
+    emoji: emojiExtension()
 });
 ```
 
-### 实例方法 (Methods)
+在普通 HTML 或 PHP 渲染页面中，可以在核心编辑器之后引入 emoji UMD 文件：
 
-- `editor.getHTML()`: 获取当前富文本的 HTML 字符串。
-- `editor.getText()`: 获取纯文本内容。
-- `editor.setHTML(html)`: 动态设置编辑器的 HTML 内容。
-- `editor.destroy()`: 销毁编辑器实例并清理事件监听。
+```html
+<link rel="stylesheet" href="dist/inkflow-editor.css" />
 
-### 事件回调 (Events)
+<div id="editor"></div>
 
-- `editor.on('ready', (editor) => {})`: 编辑器初始化完毕后触发。
-- `editor.on('change', (html) => {})`: 内容发生任何变化时触发。
-- `editor.on('focus', () => {})`: 编辑器获得焦点时触发。
-- `editor.on('blur', () => {})`: 编辑器失去焦点时触发。
+<script src="dist/inkflow-editor.umd.js"></script>
+<script src="dist/inkflow-editor-emoji.umd.js"></script>
+<script>
+    const { InkflowEditor } = window.InkflowEditor;
+    const { emojiExtension } = window.InkflowEditorEmoji;
 
-## 💻 浏览器兼容性
+    const editor = new InkflowEditor({
+        container: '#editor',
+        emoji: emojiExtension()
+    });
+</script>
+```
 
-全面支持所有现代浏览器（Chrome、Edge、Firefox、Safari 等）。不支持 Internet Explorer (IE)。
+## 配置项
 
-## 🛠️ 源码构建
+```ts
+const editor = new InkflowEditor({
+    container: '#editor',
+    lang: 'zh-CN',
+    placeholder: '开始输入...',
+    height: '500px',
+    size: 'md',
+    toolbar: [
+        ['heading'],
+        ['bold', 'italic', 'underline'],
+        ['link', 'image', 'table'],
+        ['undo', 'redo']
+    ]
+});
+```
+
+| 配置项 | 类型 | 说明 |
+| --- | --- | --- |
+| `container` | `HTMLElement \| string` | 挂载目标元素或选择器。 |
+| `theme` | `'inkflow' \| ThemeClasses` | 内置主题或自定义 class 映射。 |
+| `size` | `'sm' \| 'md' \| 'lg'` | 编辑器尺寸。 |
+| `toolbar` | `Array<string \| string[]>` | 工具栏布局。 |
+| `placeholder` | `string` | 空内容时的占位提示。 |
+| `lang` | `'en-US' \| 'zh-CN' \| LocaleDict` | 内置或自定义语言包。 |
+| `height` | `string` | 编辑区域 CSS 高度。 |
+| `emoji` | `EmojiExtension` | 来自 `inkflow-editor/emoji` 的可选 emoji 选择器扩展。 |
+| `hooks` | `object` | 链接、图片、上传、视频等异步 Hook。 |
+
+## Hooks
+
+```ts
+const editor = new InkflowEditor({
+    container: '#editor',
+    hooks: {
+        onInsertLink: async () => 'https://example.com',
+        onInsertImage: async () => 'https://example.com/image.png',
+        onInsertVideo: async () => 'https://example.com/video.mp4',
+        onUploadImage: async file => {
+            // 上传文件，并返回可访问的图片 URL。
+            return uploadImage(file);
+        }
+    }
+});
+```
+
+## API
+
+```ts
+editor.getHTML();
+editor.getText();
+editor.setHTML('<p>Hello</p>');
+editor.destroy();
+
+editor.on('ready', instance => {});
+editor.on('change', html => {});
+editor.on('focus', () => {});
+editor.on('blur', () => {});
+```
+
+## 安全说明
+
+Inkflow Editor 会在初始化、`setHTML`、粘贴、源码模式、媒体插入等关键编辑入口对 HTML 进行清洗，并对常见链接和媒体 URL 协议进行校验。
+
+业务系统在保存或渲染内容前，仍应在服务端进行校验和清洗。客户端清洗可以降低编辑过程中的风险，但不能替代后端内容安全策略。
+
+## 浏览器支持
+
+Inkflow Editor 面向现代浏览器：Chrome、Edge、Firefox 和 Safari。不支持 Internet Explorer。
+
+当前编辑器通过统一的命令适配器使用浏览器编辑 API。这样可以把兼容性处理集中起来，并为后续逐步替换高风险命令为 DOM 和 Selection 操作留出空间。
+
+## 开发
 
 ```bash
 npm install
+npm run lint
+npm run typecheck
 npm run build
 ```
 
-## 📄 开源协议
+运行完整本地检查：
 
-MIT License
+```bash
+npm run check
+```
+
+## 开源协议
+
+MIT

@@ -1,5 +1,6 @@
 import './inkflow-editor.css';
 import { InkflowEditor } from './core/editor';
+import { emojiExtension } from './emoji';
 
 /**
  * Development Entry Point
@@ -11,6 +12,7 @@ const editor = new InkflowEditor({
     lang: 'en-US',
     size: 'sm', // Small size variants for toolbar and icons
     placeholder: 'Start writing in inkflow-editor...',
+    emoji: emojiExtension(),
 
     hooks: {
         /**

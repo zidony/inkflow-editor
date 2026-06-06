@@ -59,11 +59,9 @@ function addDirectory(dirPath, zipPathPrefix) {
 // Add dist files
 const distDir = path.join(process.cwd(), 'dist');
 if (fs.existsSync(distDir)) {
-    ['inkflow-editor.css', 'inkflow-editor.umd.js', 'inkflow-editor.es.js'].forEach(file => {
-        addFile(path.join(distDir, file), `${packageName}/dist/${file}`);
-    });
+    addDirectory(distDir, `${packageName}/dist`);
 } else {
-    console.error('❌ dist folder not found. Did you run npm run build?');
+    console.error('Error: dist folder not found. Did you run npm run build?');
     process.exit(1);
 }
 
@@ -150,5 +148,5 @@ eocd.writeUInt16LE(0, 20); // Comment length
 const finalZipBuffer = Buffer.concat([...localFiles, cdBuffer, eocd]);
 fs.writeFileSync(outputFile, finalZipBuffer);
 
-console.log(`\n✅ Successfully created ZERO-DEPENDENCY release package!`);
-console.log(`📦 File: releases/${packageName}.zip\n`);
+console.log(`\nSuccessfully created release package.`);
+console.log(`File: releases/${packageName}.zip\n`);

@@ -27,6 +27,22 @@ export interface ThemeClasses {
 }
 
 /**
+ * Optional emoji integration contract.
+ * The core editor depends on this small interface instead of bundling emoji data by default.
+ */
+export interface EmojiExtension {
+    parseHTML?: (html: string) => string;
+    mountPicker: (options: {
+        wrapper: HTMLElement;
+        button: HTMLElement;
+        theme: ThemeClasses;
+        locale: LocaleDict;
+        cleanup: Array<() => void>;
+        onSelect: (emoji: string, src: string) => void;
+    }) => void;
+}
+
+/**
  * Configuration options for initializing the InkflowEditor.
  */
 export interface InkflowOptions {
@@ -47,6 +63,8 @@ export interface InkflowOptions {
     lang?: 'en-US' | 'zh-CN' | LocaleDict;
     /** Custom CSS height for the editor container. */
     height?: string;
+    /** Optional emoji extension. Import it from `inkflow-editor/emoji` when needed. */
+    emoji?: EmojiExtension;
 
     /**
      * Lifecycle and action hooks for external integration.

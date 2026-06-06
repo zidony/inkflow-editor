@@ -51,12 +51,15 @@
 
     <!-- Include compiled UMD script -->
     <script src="../dist/inkflow-editor.umd.js"></script>
+    <script src="../dist/inkflow-editor-emoji.umd.js"></script>
     <script>
         const { InkflowEditor } = window.InkflowEditor;
+        const { emojiExtension } = window.InkflowEditorEmoji;
         const editor = new InkflowEditor({
             container: '#editor-container',
             lang: 'en-US',
             placeholder: 'Start writing your amazing content here...',
+            emoji: emojiExtension(),
             hooks: {
                 onUploadImage: async (file) => {
                     return new Promise((resolve) => {
