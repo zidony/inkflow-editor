@@ -336,7 +336,11 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      * @param html The HTML string to inject.
      */
     public setHTML(html: string): void {
-        this.editorAreaEl.innerHTML = this.parseEmojiHTML(sanitizeHTML(html));
+        const sanitizedHtml = sanitizeHTML(html);
+        this.editorAreaEl.innerHTML = this.parseEmojiHTML(sanitizedHtml);
+        if (this.isSourceMode) {
+            this.sourceCodeEl.value = this.formatOutputHTML(sanitizedHtml);
+        }
         this.saveHistoryNow();
     }
 
