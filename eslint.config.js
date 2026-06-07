@@ -37,7 +37,7 @@ export default [
         ignores: ['dist/**', 'demo-dist/**', 'node_modules/**', '*.css', '*.html']
     },
     {
-        files: ['src/**/*.ts', 'tests/**/*.ts', 'vitest.config.ts'],
+        files: ['src/**/*.ts', 'tests/**/*.ts', 'e2e/**/*.ts', '*.config.ts'],
         languageOptions: {
             parser: tsParser,
             ecmaVersion: 2023,
@@ -55,6 +55,15 @@ export default [
             '@typescript-eslint/explicit-function-return-type': 'off',
             '@typescript-eslint/no-non-null-assertion': 'off',
             '@typescript-eslint/no-unused-vars': 'error'
+        }
+    },
+    {
+        files: ['*.config.ts'],
+        languageOptions: {
+            globals: {
+                __dirname: 'readonly',
+                process: 'readonly'
+            }
         }
     },
     {

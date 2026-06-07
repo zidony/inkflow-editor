@@ -27,14 +27,16 @@
     "build:demo": "vite build -c vite.demo.config.ts",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,js,css,html}\"",
-    "lint": "eslint src tests scripts *.config.js",
+    "lint": "eslint src tests e2e scripts *.config.js *.config.ts",
     "test": "vitest",
+    "test:e2e": "node scripts/run-e2e.js",
     "test:run": "vitest run",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json && tsc -p tsconfig.e2e.json",
     "check": "npm run lint && npm run typecheck && npm run test:run && npm run build && node scripts/check-dist.js",
     "release": "npm run build && node scripts/check-dist.js && node scripts/release.js"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@typescript-eslint/eslint-plugin": "^8.59.4",
     "@typescript-eslint/parser": "^8.59.4",
     "eslint": "^10.4.0",
