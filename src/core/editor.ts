@@ -30,6 +30,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     private statusBarEl!: HTMLElement;
 
     private isSourceMode: boolean = false;
+    private isDestroyed: boolean = false;
     private activeResizingImage: HTMLImageElement | null = null;
     private toolbarInstance!: Toolbar;
     private commands!: CommandAdapter;
@@ -336,6 +337,8 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      * @param html The HTML string to inject.
      */
     public setHTML(html: string): void {
+        if (this.isDestroyed) return;
+
         const sanitizedHtml = sanitizeHTML(html);
         const formattedHtml = this.formatOutputHTML(sanitizedHtml);
         this.editorAreaEl.innerHTML = this.parseEmojiHTML(formattedHtml);
@@ -349,6 +352,8 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      * Triggers an immediate history snapshot save.
      */
     public saveHistoryNow(): void {
+        if (this.isDestroyed) return;
+
         const snapshotHtml = this.getSnapshotHTML();
         const hasChanged = this.history.saveSnapshot(snapshotHtml);
         this.updateStatusBar();
@@ -362,6 +367,9 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
      * Destroys the editor instance and cleans up the DOM.
      */
     public destroy(): void {
+        if (this.isDestroyed) return;
+        this.isDestroyed = true;
+
         // 1. Remove window resize listener
         window.removeEventListener('resize', this.resizeListener);
 
@@ -651,6 +659,8 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     }
 
     private async processImageUpload(file: File): Promise<void> {
+        if (this.isDestroyed) return;
+
         const uploadId = 'upload-img-' + Math.random().toString(36).substring(2, 9);
         this.commands.insertImageUploadPlaceholder(uploadId);
         
@@ -659,6 +669,8 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
 
         try {
             const url = await hook(file);
+            if (this.isDestroyed) return;
+
             const skeletonEl = this.editorAreaEl.querySelector(`#${uploadId}`);
             if (skeletonEl) {
                 if (url) {
