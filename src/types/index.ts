@@ -42,6 +42,9 @@ export interface EmojiExtension {
     }) => void;
 }
 
+export type ToolbarMode = 'full' | 'basic';
+export type ToolbarLayout = Array<string | string[]>;
+
 /**
  * Configuration options for initializing the InkflowEditor.
  */
@@ -52,11 +55,13 @@ export interface InkflowOptions {
     theme?: 'inkflow' | ThemeClasses;
     /** The size variant of the editor. */
     size?: 'sm' | 'md' | 'lg';
+    /** Built-in toolbar preset used when no custom toolbar layout is provided. */
+    toolbarMode?: ToolbarMode;
     /**
      * Toolbar layout configuration.
      * Can be a 1D array of item names or a 2D array for logical grouping.
      */
-    toolbar?: Array<string | string[]>;
+    toolbar?: ToolbarLayout;
     /** Placeholder text displayed when the editor is empty. */
     placeholder?: string;
     /** Interface language (e.g., 'en-US', 'zh-CN') or a custom LocaleDict object. */

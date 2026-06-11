@@ -105,6 +105,8 @@ const editor = new InkflowEditor({
     placeholder: 'Start writing...',
     height: '500px',
     size: 'md',
+    toolbarMode: 'basic',
+    // Optional custom layout. When provided, it overrides toolbarMode.
     toolbar: [
         ['heading'],
         ['bold', 'italic', 'underline'],
@@ -119,12 +121,15 @@ const editor = new InkflowEditor({
 | `container` | `HTMLElement \| string` | Target element or selector. |
 | `theme` | `'inkflow' \| ThemeClasses` | Built-in theme or custom class map. |
 | `size` | `'sm' \| 'md' \| 'lg'` | Editor size variant. |
+| `toolbarMode` | `'full' \| 'basic'` | Built-in toolbar preset used when `toolbar` is not provided. |
 | `toolbar` | `Array<string \| string[]>` | Toolbar layout. |
 | `placeholder` | `string` | Placeholder text for an empty editor. |
 | `lang` | `'en-US' \| 'zh-CN' \| LocaleDict` | Built-in or custom locale. |
 | `height` | `string` | CSS height for the editing area. |
 | `emoji` | `EmojiExtension` | Optional emoji picker extension from `inkflow-editor/emoji`. |
 | `hooks` | `object` | Async hooks for links, images, uploads, and videos. |
+
+`size` controls the visual scale of the editor. `toolbarMode` controls the built-in toolbar preset. A custom `toolbar` layout always takes precedence over `toolbarMode`.
 
 ## Hooks
 

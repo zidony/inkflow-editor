@@ -105,6 +105,8 @@ const editor = new InkflowEditor({
     placeholder: '开始输入...',
     height: '500px',
     size: 'md',
+    toolbarMode: 'basic',
+    // 可选自定义布局。提供 toolbar 时会覆盖 toolbarMode。
     toolbar: [
         ['heading'],
         ['bold', 'italic', 'underline'],
@@ -119,12 +121,15 @@ const editor = new InkflowEditor({
 | `container` | `HTMLElement \| string` | 挂载目标元素或选择器。 |
 | `theme` | `'inkflow' \| ThemeClasses` | 内置主题或自定义 class 映射。 |
 | `size` | `'sm' \| 'md' \| 'lg'` | 编辑器尺寸。 |
+| `toolbarMode` | `'full' \| 'basic'` | 未提供 `toolbar` 时使用的内置工具栏显示模式。 |
 | `toolbar` | `Array<string \| string[]>` | 工具栏布局。 |
 | `placeholder` | `string` | 空内容时的占位提示。 |
 | `lang` | `'en-US' \| 'zh-CN' \| LocaleDict` | 内置或自定义语言包。 |
 | `height` | `string` | 编辑区域 CSS 高度。 |
 | `emoji` | `EmojiExtension` | 来自 `inkflow-editor/emoji` 的可选 emoji 选择器扩展。 |
 | `hooks` | `object` | 链接、图片、上传、视频等异步 Hook。 |
+
+`size` 控制编辑器的视觉尺寸，`toolbarMode` 控制内置工具栏显示模式。提供自定义 `toolbar` 时，`toolbar` 始终优先于 `toolbarMode`。
 
 ## Hooks
 

@@ -57,6 +57,14 @@ if (!fs.existsSync(distDir)) {
         fail('Public index.d.ts should expose saveHistoryNow().');
     }
 
+    if (!indexTypes.includes("export type ToolbarMode = 'full' | 'basic';")) {
+        fail('Public index.d.ts should expose ToolbarMode.');
+    }
+
+    if (!indexTypes.includes('toolbarMode?: ToolbarMode;')) {
+        fail('Public index.d.ts should expose toolbarMode.');
+    }
+
     if (!emojiTypes.includes("from './index'")) {
         fail('emoji.d.ts should reference the public index types.');
     }

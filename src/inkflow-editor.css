@@ -68,10 +68,10 @@
     border-bottom: 1px solid var(--inkflow-border);
     border-top-left-radius: calc(var(--inkflow-radius) - 1px);
     border-top-right-radius: calc(var(--inkflow-radius) - 1px);
-    padding: 8px 12px;
+    padding: 6px 8px;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
     flex-wrap: wrap;
     user-select: none;
     -webkit-user-select: none;
@@ -80,8 +80,8 @@
 .inkflow-toolbar .inkflow-toolbar-group {
     display: flex;
     align-items: center;
-    gap: 2px;
-    padding: 2px 6px;
+    gap: 1px;
+    padding: 1px 4px;
     border-right: 1px solid var(--inkflow-border);
 }
 
@@ -91,11 +91,11 @@
 
 /* Custom button styles */
 .inkflow-btn {
-    width: 32px;
-    height: 30px;
+    width: 30px;
+    height: 28px;
     border: none;
     background: transparent;
-    border-radius: 6px;
+    border-radius: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -128,10 +128,10 @@
     font-size: 0.85rem;
     font-weight: 500;
     color: var(--inkflow-text-main);
-    height: 30px;
-    padding: 0 6px;
+    height: 28px;
+    padding: 0 4px;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 5px;
     outline: none;
     transition: background 0.15s ease, border-color 0.15s ease;
 }
@@ -547,24 +547,24 @@
    ============================================================ */
 /* Small Size (sm) Variant */
 .inkflow-size-sm .inkflow-toolbar {
-    padding: 4px 8px;
-    gap: 2px;
+    padding: 4px 6px;
+    gap: 1px;
 }
 
 .inkflow-size-sm .inkflow-toolbar .inkflow-toolbar-group {
-    padding: 0 4px;
+    padding: 0 3px;
 }
 
 .inkflow-size-sm .inkflow-btn {
-    width: 26px;
-    height: 24px;
-    font-size: 0.75rem; /* Automatically scales 1.2em SVG icons perfectly to 14.4px */
+    width: 24px;
+    height: 22px;
+    font-size: 0.72rem; /* Automatically scales 1.2em SVG icons perfectly to 13.8px */
     border-radius: 4px;
 }
 
 .inkflow-size-sm .inkflow-select {
-    height: 24px;
-    font-size: 0.75rem;
+    height: 22px;
+    font-size: 0.72rem;
     padding: 0 2px;
     border-radius: 4px;
 }
@@ -583,25 +583,25 @@
 
 /* Large Size (lg) Variant */
 .inkflow-size-lg .inkflow-toolbar {
-    padding: 12px 16px;
-    gap: 6px;
+    padding: 10px 14px;
+    gap: 4px;
 }
 
 .inkflow-size-lg .inkflow-toolbar .inkflow-toolbar-group {
-    padding: 4px 8px;
+    padding: 3px 6px;
 }
 
 .inkflow-size-lg .inkflow-btn {
-    width: 38px;
-    height: 36px;
-    font-size: 1rem; /* Automatically scales 1.2em SVG icons perfectly to 19.2px */
+    width: 36px;
+    height: 34px;
+    font-size: 0.95rem; /* Automatically scales 1.2em SVG icons perfectly to 18.2px */
     border-radius: 8px;
 }
 
 .inkflow-size-lg .inkflow-select {
-    height: 36px;
-    font-size: 0.95rem;
-    padding: 0 8px;
+    height: 34px;
+    font-size: 0.9rem;
+    padding: 0 6px;
     border-radius: 8px;
 }
 

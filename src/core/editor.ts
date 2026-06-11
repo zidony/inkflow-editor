@@ -1,5 +1,5 @@
 import { Toolbar } from '../ui/toolbar';
-import type { InkflowOptions, ThemeClasses, EditorInstance, LocaleDict } from '../types/index';
+import type { InkflowOptions, ThemeClasses, EditorInstance, LocaleDict, ToolbarLayout } from '../types/index';
 import { inkflowTheme } from '../themes/inkflow';
 import { HistoryManager } from './history';
 import { enUS } from '../locales/en-US';
@@ -280,18 +280,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     }
 
     private initializeToolbar(): void {
-        const defaultToolbarLayout = [
-            ['heading'],
-            ['bold', 'italic', 'underline', 'strike', 'inlineCode', 'eraser'],
-            ['alignLeft', 'alignCenter', 'alignRight'],
-            ['listUl', 'listOl'],
-            this.options.emoji
-                ? ['link', 'image', 'video', 'codeBlock', 'blockquote', 'table', 'divider', 'emoji']
-                : ['link', 'image', 'video', 'codeBlock', 'blockquote', 'table', 'divider'],
-            ['undo', 'redo'],
-            ['sourceCode', 'fullscreen']
-        ];
-        const toolbarConfig = this.options.toolbar || defaultToolbarLayout;
+        const toolbarConfig = this.resolveToolbarLayout();
 
         this.toolbarInstance = new Toolbar(
             this.toolbarEl,
@@ -303,6 +292,49 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.options.emoji,
             this.options.hooks
         );
+    }
+
+    private resolveToolbarLayout(): ToolbarLayout {
+        if (this.options.toolbar) return this.options.toolbar;
+        return this.options.toolbarMode === 'basic'
+            ? this.createBasicToolbarLayout()
+            : this.createFullToolbarLayout();
+    }
+
+    private createFullToolbarLayout(): ToolbarLayout {
+        const blockTools = this.options.emoji
+            ? ['codeBlock', 'blockquote', 'table', 'divider', 'emoji']
+            : ['codeBlock', 'blockquote', 'table', 'divider'];
+
+        return [
+            ['heading'],
+            ['bold', 'italic', 'underline', 'strike', 'inlineCode', 'eraser'],
+            ['alignLeft', 'alignCenter', 'alignRight'],
+            ['listUl', 'listOl'],
+            blockTools,
+            ['link', 'image', 'video'],
+            ['undo', 'redo'],
+            ['sourceCode', 'fullscreen']
+        ];
+    }
+
+    private createBasicToolbarLayout(): ToolbarLayout {
+        const toolbarLayout: ToolbarLayout = [
+            ['heading'],
+            ['bold', 'italic', 'underline'],
+            ['listUl', 'listOl'],
+            ['link', 'image'],
+        ];
+
+        if (this.options.emoji) {
+            toolbarLayout.push(['emoji']);
+        }
+
+        toolbarLayout.push(
+            ['undo', 'redo']
+        );
+
+        return toolbarLayout;
     }
 
     // ============================================================================

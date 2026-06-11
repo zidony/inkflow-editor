@@ -46,6 +46,9 @@ export interface EmojiExtension {
     }) => void;
 }
 
+export type ToolbarMode = 'full' | 'basic';
+export type ToolbarLayout = Array<string | string[]>;
+
 /**
  * Configuration options for initializing the editor.
  */
@@ -53,7 +56,8 @@ export interface InkflowOptions {
     container: HTMLElement | string;
     theme?: 'inkflow' | ThemeClasses;
     size?: 'sm' | 'md' | 'lg';
-    toolbar?: Array<string | string[]>;
+    toolbarMode?: ToolbarMode;
+    toolbar?: ToolbarLayout;
     placeholder?: string;
     lang?: 'en-US' | 'zh-CN' | LocaleDict;
     height?: string;

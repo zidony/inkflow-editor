@@ -8,4 +8,12 @@ export { InkflowEditor } from './core/editor';
 export { inkflowTheme } from './themes/inkflow';
 
 // 4. Export TypeScript types to provide perfect code completion for integrators
-export type { EmojiExtension, InkflowOptions, EditorInstance, ThemeClasses, LocaleDict } from './types/index';
+export type {
+    EmojiExtension,
+    InkflowOptions,
+    EditorInstance,
+    ThemeClasses,
+    LocaleDict,
+    ToolbarLayout,
+    ToolbarMode
+} from './types/index';
