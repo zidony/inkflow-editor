@@ -1,9 +1,29 @@
 /**
+ * Status bar and transient message strings.
+ * Optional so existing custom locale objects keep working; the editor
+ * falls back to English defaults for any missing key.
+ */
+export interface StatusDict {
+    visualMode: string;
+    sourceMode: string;
+    words: string;
+    characters: string;
+    ready: string;
+    saved: string;
+    editing: string;
+    undo: string;
+    redo: string;
+    imageUploading: string;
+    uploadNotConfigured: string;
+}
+
+/**
  * Language dictionary interface for editor localization.
  */
 export interface LocaleDict {
     toolbar: Record<string, string>;
     emojiCategories?: Record<string, string>;
+    status?: Partial<StatusDict>;
     prompts: {
         linkUrl: string;
         imageUrl: string;

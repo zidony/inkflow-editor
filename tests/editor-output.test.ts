@@ -26,6 +26,15 @@ describe('InkflowEditor output normalization', () => {
         editor.destroy();
     });
 
+    it('preserves text alignment through setHTML and getHTML round-trips', () => {
+        const editor = createEditor();
+
+        editor.setHTML('<p style="text-align: center;">Centered</p>');
+
+        expect(editor.getHTML()).toBe('<p style="text-align: center">Centered</p>');
+        editor.destroy();
+    });
+
     it('standardizes bold and italic tags in output without dropping nested content', () => {
         const editor = createEditor('<p><b>Hello <i>Inkflow</i></b></p>');
 

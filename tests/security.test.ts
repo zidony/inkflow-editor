@@ -46,6 +46,31 @@ describe('security utilities', () => {
         expect(element.hasAttribute('onclick')).toBe(false);
     });
 
+    it('keeps whitelisted text-align styles for layout round-trips', () => {
+        const html = sanitizeHTML('<p style="text-align: center;">Centered</p>');
+        const element = parseBody(html);
+
+        expect(element.getAttribute('style')).toBe('text-align: center');
+    });
+
+    it('keeps text-decoration line values but drops unsafe declarations', () => {
+        const html = sanitizeHTML(
+            '<p style="text-decoration: line-through; color: red; position: fixed;">x</p>'
+        );
+        const element = parseBody(html);
+
+        expect(element.getAttribute('style')).toBe('text-decoration: line-through');
+    });
+
+    it('rejects style injection attempts via url() and invalid alignment', () => {
+        const html = sanitizeHTML(
+            '<p style="text-align: url(javascript:alert(1)); background: url(x);">x</p>'
+        );
+        const element = parseBody(html);
+
+        expect(element.hasAttribute('style')).toBe(false);
+    });
+
     it('normalizes safe links and rejects script links', () => {
         const html = sanitizeHTML(
             '<a href="https://example.com" target="_blank">safe</a><a href="javascript:alert(1)">bad</a>'

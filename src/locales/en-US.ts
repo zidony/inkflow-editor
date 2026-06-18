@@ -51,6 +51,19 @@ export const enUS: LocaleDict = {
         '物品': 'Objects',
         '自然': 'Nature'
     },
+    status: {
+        visualMode: 'Visual Editor',
+        sourceMode: 'HTML Source',
+        words: 'Words',
+        characters: 'Characters',
+        ready: 'Ready',
+        saved: 'Saved',
+        editing: 'Editing...',
+        undo: 'Undo',
+        redo: 'Redo',
+        imageUploading: 'Image uploading...',
+        uploadNotConfigured: 'Image upload is not configured'
+    },
     prompts: {
         linkUrl: 'Enter link URL:',
         imageUrl: 'Enter image URL:',

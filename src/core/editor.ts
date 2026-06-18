@@ -1,5 +1,5 @@
 import { Toolbar } from '../ui/toolbar';
-import type { InkflowOptions, ThemeClasses, EditorInstance, LocaleDict, ToolbarLayout } from '../types/index';
+import type { InkflowOptions, ThemeClasses, EditorInstance, LocaleDict, StatusDict, ToolbarLayout } from '../types/index';
 import { inkflowTheme } from '../themes/inkflow';
 import { HistoryManager } from './history';
 import { enUS } from '../locales/en-US';
@@ -8,6 +8,20 @@ import { sanitizeHTML, sanitizeMediaUrl } from '../utils/security';
 
 import { CommandAdapter } from './commands';
 import { EventEmitter } from './emitter';
+
+const DEFAULT_STATUS: StatusDict = {
+    visualMode: 'Visual Editor',
+    sourceMode: 'HTML Source',
+    words: 'Words',
+    characters: 'Characters',
+    ready: 'Ready',
+    saved: 'Saved',
+    editing: 'Editing...',
+    undo: 'Undo',
+    redo: 'Redo',
+    imageUploading: 'Image uploading...',
+    uploadNotConfigured: 'Image upload is not configured'
+};
 
 /**
  * Core InkflowEditor Class
@@ -20,6 +34,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     private options: InkflowOptions;
     private theme: ThemeClasses;
     private locale: LocaleDict;
+    private status: StatusDict;
 
     private containerEl: HTMLElement;
     private wrapperEl!: HTMLElement;
@@ -77,6 +92,8 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         } else {
             this.locale = options.lang === 'en-US' ? enUS : zhCN;
         }
+
+        this.status = { ...DEFAULT_STATUS, ...(this.locale.status || {}) };
 
         // Extract and sanitize initial HTML before the container is overwritten.
         const initialHtml = sanitizeHTML(this.containerEl.innerHTML.trim());
@@ -185,15 +202,15 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
 
         const modeSpan = document.createElement('span');
         modeSpan.className = 'inkflow-status-mode';
-        modeSpan.textContent = this.isSourceMode ? 'HTML Source' : 'Visual Editor';
+        modeSpan.textContent = this.isSourceMode ? this.status.sourceMode : this.status.visualMode;
 
         const statsSpan = document.createElement('span');
         statsSpan.className = 'inkflow-status-stats';
-        statsSpan.textContent = 'Words: 0 | Characters: 0';
+        statsSpan.textContent = `${this.status.words}: 0 | ${this.status.characters}: 0`;
 
         const statusMsgSpan = document.createElement('span');
         statusMsgSpan.className = 'inkflow-status-message';
-        statusMsgSpan.textContent = 'Ready';
+        statusMsgSpan.textContent = this.status.ready;
 
         this.statusBarEl.appendChild(modeSpan);
         this.statusBarEl.appendChild(statsSpan);
@@ -391,7 +408,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.updateStatusBar();
         if (hasChanged) {
             this.emit('change', this.getHTML());
-            this.setStatusMessage('Saved');
+            this.setStatusMessage(this.status.saved);
         }
     }
 
@@ -503,7 +520,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.handlePasteEvent(e)
         );
         this.sourceCodeEl.addEventListener('input', () => {
-            this.setStatusMessage('Editing...', 0);
+            this.setStatusMessage(this.status.editing, 0);
             this.debounceSaveHistory();
             this.updateStatusBar();
         });
@@ -571,7 +588,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         ];
         if (!ignoredKeys.includes(e.key)) {
             this.clearImageSelection();
-            this.setStatusMessage('Editing...', 0);
+            this.setStatusMessage(this.status.editing, 0);
             this.debounceSaveHistory();
         }
 
@@ -639,7 +656,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.commands.insertText(text);
         } else if (hasImageFile) {
             // Image pasted with no upload hook and no textual fallback.
-            this.setStatusMessage('Image upload is not configured');
+            this.setStatusMessage(this.status.uploadNotConfigured);
             return;
         }
 
@@ -683,7 +700,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         // message instead of silently discarding it (browser navigation was
         // already prevented by the wrapper drop handler).
         if (!this.options.hooks?.onUploadImage) {
-            this.setStatusMessage('Image upload is not configured');
+            this.setStatusMessage(this.status.uploadNotConfigured);
             return;
         }
 
@@ -714,7 +731,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         if (this.isDestroyed) return;
 
         const uploadId = 'upload-img-' + Math.random().toString(36).substring(2, 9);
-        this.commands.insertImageUploadPlaceholder(uploadId);
+        this.commands.insertImageUploadPlaceholder(uploadId, this.status.imageUploading);
         
         const hook = this.options.hooks?.onUploadImage;
         if (!hook) return;
@@ -880,7 +897,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.restoreSnapshot(prev);
             this.toolbarInstance.updateState();
             this.updateStatusBar();
-            this.setStatusMessage('Undo');
+            this.setStatusMessage(this.status.undo);
         }
     }
 
@@ -891,7 +908,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.restoreSnapshot(next);
             this.toolbarInstance.updateState();
             this.updateStatusBar();
-            this.setStatusMessage('Redo');
+            this.setStatusMessage(this.status.redo);
         }
     }
 
@@ -1221,15 +1238,32 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         const statsEl = this.statusBarEl.querySelector('.inkflow-status-stats');
 
         if (modeEl) {
-            modeEl.textContent = this.isSourceMode ? 'HTML Source' : 'Visual Editor';
+            modeEl.textContent = this.isSourceMode ? this.status.sourceMode : this.status.visualMode;
         }
 
         if (statsEl) {
             const text = this.getText();
-            const charCount = text.length;
-            const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-            statsEl.textContent = `Words: ${wordCount} | Characters: ${charCount}`;
+            const charCount = [...text.replace(/\s/g, '')].length;
+            const wordCount = this.countWords(text);
+            statsEl.textContent = `${this.status.words}: ${wordCount} | ${this.status.characters}: ${charCount}`;
         }
+    }
+
+    /**
+     * Counts words in a CJK-aware way: each CJK ideograph / kana / Hangul
+     * syllable counts as one word, while runs of non-CJK characters are
+     * counted as whitespace-delimited words.
+     */
+    private countWords(text: string): number {
+        const cjkPattern =
+            /[\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/g;
+        const cjkMatches = text.match(cjkPattern);
+        const cjkCount = cjkMatches ? cjkMatches.length : 0;
+
+        const nonCjk = text.replace(cjkPattern, ' ').trim();
+        const nonCjkCount = nonCjk === '' ? 0 : nonCjk.split(/\s+/).length;
+
+        return cjkCount + nonCjkCount;
     }
 
     /**
@@ -1249,7 +1283,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
                 this.statusMessageTimeout = window.setTimeout(() => {
                     this.statusMessageTimeout = null;
                     if (msgEl && msgEl.textContent === msg) {
-                        msgEl.textContent = 'Ready';
+                        msgEl.textContent = this.status.ready;
                         msgEl.classList.remove('is-active');
                     }
                 }, duration);

@@ -51,6 +51,19 @@ export const zhCN: LocaleDict = {
         '物品': '物品',
         '自然': '自然'
     },
+    status: {
+        visualMode: '可视编辑',
+        sourceMode: 'HTML 源码',
+        words: '词数',
+        characters: '字符',
+        ready: '就绪',
+        saved: '已保存',
+        editing: '编辑中...',
+        undo: '撤销',
+        redo: '重做',
+        imageUploading: '图片上传中...',
+        uploadNotConfigured: '未配置图片上传'
+    },
     prompts: {
         linkUrl: '请输入链接地址:',
         imageUrl: '请输入图片地址:',

@@ -56,6 +56,17 @@ const HREF_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 const MEDIA_PROTOCOLS = new Set(['http:', 'https:', 'blob:']);
 const IMAGE_DATA_URL_PATTERN = /^data:image\/(?:png|gif|jpe?g|webp);base64,[a-z0-9+/]+=*$/i;
 
+/**
+ * Inline CSS properties that survive sanitization, each paired with a strict
+ * value validator. Values are token allowlists with no parentheses, colons,
+ * or url()/expression() escapes, so no CSS-based injection can pass through.
+ */
+const STYLE_WHITELIST: Record<string, RegExp> = {
+    'text-align': /^(left|right|center|justify|start|end)$/,
+    'text-decoration': /^(none|((underline|overline|line-through)(\s+(underline|overline|line-through))*))$/,
+    'text-decoration-line': /^(none|((underline|overline|line-through)(\s+(underline|overline|line-through))*))$/
+};
+
 type UrlKind = 'href' | 'media' | 'image';
 
 function normalizeUrl(rawUrl: string, kind: UrlKind): string | null {
@@ -80,6 +91,37 @@ function shouldKeepAttribute(tagName: string, attrName: string): boolean {
     return GLOBAL_ATTRIBUTES.has(attrName) || Boolean(TAG_ATTRIBUTES[tagName]?.has(attrName));
 }
 
+/**
+ * Rewrites an element's inline style, keeping only whitelisted properties
+ * whose values pass strict validation. Parses the raw declaration string
+ * directly (no reliance on CSSOM) so behavior is identical across DOM
+ * implementations.
+ */
+function sanitizeStyleAttribute(element: Element): void {
+    const raw = element.getAttribute('style') || '';
+    const kept: string[] = [];
+
+    raw.split(';').forEach(declaration => {
+        const separatorIndex = declaration.indexOf(':');
+        if (separatorIndex === -1) return;
+
+        const prop = declaration.slice(0, separatorIndex).trim().toLowerCase();
+        const value = declaration.slice(separatorIndex + 1).trim().toLowerCase();
+        if (!prop || !value) return;
+
+        const validator = STYLE_WHITELIST[prop];
+        if (validator && validator.test(value)) {
+            kept.push(`${prop}: ${value}`);
+        }
+    });
+
+    if (kept.length > 0) {
+        element.setAttribute('style', kept.join('; '));
+    } else {
+        element.removeAttribute('style');
+    }
+}
+
 function sanitizeElement(element: Element): void {
     const tagName = element.tagName.toLowerCase();
 
@@ -87,7 +129,12 @@ function sanitizeElement(element: Element): void {
         const attrName = attr.name.toLowerCase();
         const attrValue = attr.value;
 
-        if (attrName.startsWith('on') || attrName === 'style' || attrName === 'id') {
+        if (attrName === 'style') {
+            sanitizeStyleAttribute(element);
+            return;
+        }
+
+        if (attrName.startsWith('on') || attrName === 'id') {
             element.removeAttribute(attr.name);
             return;
         }
