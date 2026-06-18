@@ -4,6 +4,7 @@ import prettier from 'eslint-config-prettier';
 
 const browserGlobals = {
     ClipboardEvent: 'readonly',
+    Comment: 'readonly',
     CustomEvent: 'readonly',
     DOMParser: 'readonly',
     DocumentFragment: 'readonly',
@@ -23,6 +24,7 @@ const browserGlobals = {
     KeyboardEvent: 'readonly',
     MouseEvent: 'readonly',
     Node: 'readonly',
+    NodeFilter: 'readonly',
     Range: 'readonly',
     Text: 'readonly',
     URL: 'readonly',

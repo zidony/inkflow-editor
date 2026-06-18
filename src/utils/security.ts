@@ -132,7 +132,10 @@ function sanitizeElement(element: Element): void {
     });
 
     if (tagName === 'iframe') {
-        element.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
+        // Intentionally omit `allow-same-origin`: combining it with
+        // `allow-scripts` lets framed content remove its own sandbox and
+        // escape the restrictions (per OWASP/MDN guidance).
+        element.setAttribute('sandbox', 'allow-scripts allow-presentation');
         element.setAttribute('loading', element.getAttribute('loading') || 'lazy');
     }
 }
@@ -141,10 +144,13 @@ function sanitizeElement(element: Element): void {
  * Sanitizes untrusted HTML before it enters the editable surface.
  */
 export function sanitizeHTML(dirtyHtml: string): string {
-    const cleanHtml = dirtyHtml.replace(/<!--[\s\S]*?-->/g, '');
     const parser = new DOMParser();
-    const doc = parser.parseFromString(cleanHtml, 'text/html');
+    const doc = parser.parseFromString(dirtyHtml, 'text/html');
     const body = doc.body;
+
+    // Strip comment nodes after parsing (more robust than a pre-parse regex,
+    // which can mis-handle comment-like sequences across HTML contexts).
+    removeCommentNodes(body);
 
     Array.from(body.querySelectorAll('*')).forEach(element => {
         const tagName = element.tagName.toLowerCase();
@@ -163,6 +169,18 @@ export function sanitizeHTML(dirtyHtml: string): string {
     });
 
     return body.innerHTML;
+}
+
+function removeCommentNodes(root: Node): void {
+    const ownerDoc = root.ownerDocument || document;
+    const walker = ownerDoc.createTreeWalker(root, NodeFilter.SHOW_COMMENT);
+    const comments: Comment[] = [];
+    let current = walker.nextNode();
+    while (current) {
+        comments.push(current as Comment);
+        current = walker.nextNode();
+    }
+    comments.forEach(comment => comment.remove());
 }
 
 /**

@@ -82,6 +82,53 @@ describe('CommandAdapter', () => {
         expect(editor.innerHTML).toBe('<p>Hello &lt;strong&gt;text&lt;/strong&gt;</p>');
     });
 
+    it('preserves newlines in pasted plain text as <br> elements', () => {
+        const editor = createEditor('<p>Start </p>');
+        const paragraph = editor.querySelector('p') as HTMLParagraphElement;
+        placeCaretAtEnd(paragraph);
+
+        const commands = new CommandAdapter(editor);
+        commands.insertText('line1\nline2\r\nline3');
+
+        expect(editor.innerHTML).toBe('<p>Start line1<br>line2<br>line3</p>');
+    });
+
+    it('keeps blank lines from multi-line plain text', () => {
+        const editor = createEditor('<p></p>');
+        const paragraph = editor.querySelector('p') as HTMLParagraphElement;
+        placeCaretAtEnd(paragraph);
+
+        const commands = new CommandAdapter(editor);
+        commands.insertText('a\n\nb');
+
+        expect(editor.innerHTML).toBe('<p>a<br><br>b</p>');
+    });
+
+    it('rejects unsafe link URLs at the command layer', () => {
+        const editor = createEditor('<p>Visit here</p>');
+        const textNode = editor.querySelector('p')?.firstChild as Text;
+        selectText(textNode, 6, 10);
+
+        const commands = new CommandAdapter(editor);
+
+        expect(commands.createLink('javascript:alert(1)')).toBe(false);
+        expect(editor.querySelector('a')).toBeNull();
+        expect(editor.innerHTML).toBe('<p>Visit here</p>');
+    });
+
+    it('rejects unsafe image and video URLs at the command layer', () => {
+        const editor = createEditor('<p>Before </p>');
+        const paragraph = editor.querySelector('p') as HTMLParagraphElement;
+        placeCaretAtEnd(paragraph);
+
+        const commands = new CommandAdapter(editor);
+
+        expect(commands.insertImage('data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=')).toBe(false);
+        expect(commands.insertVideo('javascript:alert(1)')).toBe(false);
+        expect(editor.querySelector('img')).toBeNull();
+        expect(editor.querySelector('video')).toBeNull();
+    });
+
     it('creates a link from the selected text', () => {
         const editor = createEditor('<p>Visit Inkflow</p>');
         const textNode = editor.querySelector('p')?.firstChild as Text;

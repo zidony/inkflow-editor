@@ -193,4 +193,62 @@ describe('InkflowEditor lifecycle', () => {
         expect(changeHandler).not.toHaveBeenCalled();
         expect(container.innerHTML).toBe('');
     });
+
+    it('marks the editor empty so the placeholder can render', () => {
+        const { container, editor } = createEditor('', { placeholder: 'Write here' });
+        const editorBody = container.querySelector<HTMLElement>('.inkflow-editor-body');
+
+        expect(editorBody?.dataset.placeholder).toBe('Write here');
+        expect(editorBody?.classList.contains('is-empty')).toBe(true);
+
+        editor.setHTML('<p>Now has content</p>');
+        expect(editorBody?.classList.contains('is-empty')).toBe(false);
+
+        editor.setHTML('');
+        expect(editorBody?.classList.contains('is-empty')).toBe(true);
+        editor.destroy();
+    });
+
+    it('treats residual <br> markup as empty but media as content', () => {
+        const { container, editor } = createEditor('<p><br></p>', { placeholder: 'Write here' });
+        const editorBody = container.querySelector<HTMLElement>('.inkflow-editor-body');
+
+        expect(editorBody?.classList.contains('is-empty')).toBe(true);
+
+        editor.setHTML('<p><img src="https://example.com/a.png"></p>');
+        expect(editorBody?.classList.contains('is-empty')).toBe(false);
+        editor.destroy();
+    });
+
+    it('never adds the empty marker when no placeholder is configured', () => {
+        const { container, editor } = createEditor('');
+        const editorBody = container.querySelector<HTMLElement>('.inkflow-editor-body');
+
+        expect(editorBody?.classList.contains('is-empty')).toBe(false);
+        editor.destroy();
+    });
+
+    it('reports a status message when an image is dropped without an upload hook', () => {
+        const { container, editor } = createEditor('<p>Initial</p>');
+        const wrapper = container.querySelector<HTMLElement>('.inkflow-container');
+        const editorBody = container.querySelector<HTMLElement>('.inkflow-editor-body');
+        const statusMessage = container.querySelector<HTMLElement>('.inkflow-status-message');
+
+        if (!wrapper || !editorBody) {
+            throw new Error('Editor fixtures were not created.');
+        }
+
+        const file = new File(['image'], 'image.png', { type: 'image/png' });
+        const dropEvent = new Event('drop', { bubbles: true, cancelable: true }) as DragEvent;
+        Object.defineProperty(dropEvent, 'dataTransfer', {
+            value: { files: [file], types: ['Files'] }
+        });
+        Object.defineProperty(dropEvent, 'target', { value: editorBody });
+
+        wrapper.dispatchEvent(dropEvent);
+
+        expect(statusMessage?.textContent).toBe('Image upload is not configured');
+        expect(editorBody.querySelector('img')).toBeNull();
+        editor.destroy();
+    });
 });

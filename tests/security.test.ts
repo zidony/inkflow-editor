@@ -16,6 +16,20 @@ describe('security utilities', () => {
         expect(html).toBe('<p>Hello<strong>world</strong></p>');
     });
 
+    it('strips HTML comments while preserving surrounding markup', () => {
+        const html = sanitizeHTML('<p>Hello<!-- secret --> world</p><!--[if IE]><b>x</b><![endif]-->');
+
+        expect(html).toBe('<p>Hello world</p>');
+    });
+
+    it('does not let comment-like text inside attributes break sanitization', () => {
+        const html = sanitizeHTML('<p title="a<!--b-->c">Text<!--x--></p>');
+        const element = parseBody(html);
+
+        expect(element.tagName).toBe('P');
+        expect(element.textContent).toBe('Text');
+    });
+
     it('preserves legacy bold and italic tags for output normalization', () => {
         const html = sanitizeHTML('<p><b>Bold</b> and <i>italic</i></p>');
 
@@ -77,7 +91,7 @@ describe('security utilities', () => {
         const iframe = parseBody(html);
 
         expect(iframe.getAttribute('src')).toBe('https://example.com/embed');
-        expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-same-origin allow-presentation');
+        expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-presentation');
         expect(iframe.getAttribute('loading')).toBe('lazy');
         expect(iframe.hasAttribute('onload')).toBe(false);
         expect(iframe.hasAttribute('style')).toBe(false);

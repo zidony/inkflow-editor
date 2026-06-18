@@ -614,8 +614,13 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         e.preventDefault();
         if (!e.clipboardData) return;
 
+        const hasImageFile =
+            !!e.clipboardData.files &&
+            e.clipboardData.files.length > 0 &&
+            Array.from(e.clipboardData.files).some(file => file.type.indexOf('image') !== -1);
+
         // Check for image files first if hook is provided
-        if (this.options.hooks?.onUploadImage && e.clipboardData.files && e.clipboardData.files.length > 0) {
+        if (this.options.hooks?.onUploadImage && hasImageFile) {
             for (let i = 0; i < e.clipboardData.files.length; i++) {
                 const file = e.clipboardData.files[i];
                 if (file.type.indexOf('image') !== -1) {
@@ -632,6 +637,10 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.commands.insertHTML(sanitizeHTML(html));
         } else if (text) {
             this.commands.insertText(text);
+        } else if (hasImageFile) {
+            // Image pasted with no upload hook and no textual fallback.
+            this.setStatusMessage('Image upload is not configured');
+            return;
         }
 
         this.saveHistoryNow();
@@ -662,16 +671,27 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     }
 
     private handleDropEvent(e: DragEvent): void {
-        if (!this.options.hooks?.onUploadImage || !e.dataTransfer) return;
-        
+        if (!e.dataTransfer) return;
+
         const files = e.dataTransfer.files;
         if (!files || files.length === 0) return;
+
+        const hasImage = Array.from(files).some(file => file.type.indexOf('image') !== -1);
+        if (!hasImage) return;
+
+        // An image was dropped but no upload hook is configured: surface a
+        // message instead of silently discarding it (browser navigation was
+        // already prevented by the wrapper drop handler).
+        if (!this.options.hooks?.onUploadImage) {
+            this.setStatusMessage('Image upload is not configured');
+            return;
+        }
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             if (file.type.indexOf('image') !== -1) {
                 e.preventDefault(); // Prevent browser from opening the image directly
-                
+
                 // Update selection to drop position
                 if (document.caretRangeFromPoint) {
                     const range = document.caretRangeFromPoint(e.clientX, e.clientY);
@@ -683,7 +703,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
                         }
                     }
                 }
-                
+
                 this.processImageUpload(file);
                 return; // only process the first image
             }
@@ -1169,9 +1189,32 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     // Status Bar & Metrics Helpers
     // ============================================================================
     /**
+     * Determines whether the visual editor has no meaningful content.
+     * Treats contenteditable residue (a lone <br>, an empty paragraph,
+     * or whitespace-only text) as empty, while any media counts as content.
+     */
+    private isEditorEmpty(): boolean {
+        if (this.editorAreaEl.querySelector('img,video,iframe,table,hr,pre')) {
+            return false;
+        }
+        return (this.editorAreaEl.textContent || '').replace(/\u00A0/g, ' ').trim() === '';
+    }
+
+    /**
+     * Toggles the `is-empty` class so the CSS placeholder renders only when
+     * the editor is empty and a placeholder is configured.
+     */
+    private updateEmptyState(): void {
+        if (!this.options.placeholder) return;
+        this.editorAreaEl.classList.toggle('is-empty', this.isEditorEmpty());
+    }
+
+    /**
      * Updates word and character counts in the status bar.
      */
     private updateStatusBar(): void {
+        this.updateEmptyState();
+
         if (!this.statusBarEl) return;
 
         const modeEl = this.statusBarEl.querySelector('.inkflow-status-mode');

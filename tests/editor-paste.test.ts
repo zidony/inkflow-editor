@@ -96,7 +96,7 @@ describe('InkflowEditor paste sanitization', () => {
         });
 
         expect(editor.getHTML()).toBe(
-            '<p><img alt="bad"><iframe src="https://example.com/embed" sandbox="allow-scripts allow-same-origin allow-presentation" loading="lazy"></iframe></p>'
+            '<p><img alt="bad"><iframe src="https://example.com/embed" sandbox="allow-scripts allow-presentation" loading="lazy"></iframe></p>'
         );
         editor.destroy();
     });

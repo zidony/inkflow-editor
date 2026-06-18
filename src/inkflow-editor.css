@@ -164,6 +164,7 @@
     line-height: 1.75;
     color: var(--inkflow-text-main);
     cursor: text;
+    position: relative;
     word-wrap: break-word;
     overflow-wrap: break-word;
     word-break: break-word;
@@ -172,6 +173,17 @@
     resize: vertical;
     box-sizing: border-box;
     outline: none;
+}
+
+/* Placeholder shown when the editor is empty.
+   `is-empty` is toggled by the editor to cover contenteditable's
+   residual markup (e.g. a lone <br> or <p><br></p>). */
+.inkflow-editor-body.is-empty::before {
+    content: attr(data-placeholder);
+    color: var(--inkflow-text-muted, #9ca3af);
+    pointer-events: none;
+    position: absolute;
+    cursor: text;
 }
 
 /* Custom Scrollbars */
@@ -556,9 +568,9 @@
 }
 
 .inkflow-size-sm .inkflow-btn {
-    width: 24px;
-    height: 22px;
-    font-size: 0.72rem; /* Automatically scales 1.2em SVG icons perfectly to 13.8px */
+    width: 26px;
+    height: 24px;
+    font-size: 0.75rem; /* Automatically scales 1.2em SVG icons to 14.4px */
     border-radius: 4px;
 }
 

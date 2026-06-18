@@ -2,6 +2,8 @@
  * Small command facade around browser editing APIs.
  * It keeps legacy execCommand usage centralized while high-risk commands move to DOM operations.
  */
+import { sanitizeHref, sanitizeMediaUrl } from '../utils/security';
+
 export class CommandAdapter {
     private editorArea: HTMLElement;
 
@@ -28,7 +30,23 @@ export class CommandAdapter {
     }
 
     public insertText(text: string): boolean {
-        return this.insertNode(document.createTextNode(text));
+        if (!text.includes('\n') && !text.includes('\r')) {
+            return this.insertNode(document.createTextNode(text));
+        }
+
+        // Preserve line breaks from plain-text paste by mapping each newline
+        // to a <br>. Text is never parsed as HTML.
+        const fragment = document.createDocumentFragment();
+        const lines = text.split(/\r\n|\r|\n/);
+        lines.forEach((line, index) => {
+            if (index > 0) {
+                fragment.appendChild(document.createElement('br'));
+            }
+            if (line) {
+                fragment.appendChild(document.createTextNode(line));
+            }
+        });
+        return this.insertFragment(fragment);
     }
 
     public formatBlock(value: string): boolean {
@@ -36,26 +54,32 @@ export class CommandAdapter {
     }
 
     public createLink(url: string): boolean {
+        const safeUrl = sanitizeHref(url);
+        if (!safeUrl) return false;
+
         const selection = window.getSelection();
         const link = document.createElement('a');
-        link.href = url;
+        link.href = safeUrl;
         link.rel = 'noopener noreferrer';
 
         if (selection && selection.rangeCount > 0 && this.editorArea.contains(selection.anchorNode)) {
             const range = selection.getRangeAt(0);
             const selectedText = selection.toString();
-            link.textContent = selectedText || url;
+            link.textContent = selectedText || safeUrl;
             range.deleteContents();
             return this.insertNode(link, range);
         }
 
-        link.textContent = url;
+        link.textContent = safeUrl;
         return this.insertNode(link);
     }
 
     public insertImage(url: string): boolean {
+        const safeUrl = sanitizeMediaUrl(url, 'image');
+        if (!safeUrl) return false;
+
         const image = document.createElement('img');
-        image.src = url;
+        image.src = safeUrl;
         image.alt = 'image';
         return this.insertNode(image);
     }
@@ -75,8 +99,11 @@ export class CommandAdapter {
     }
 
     public insertVideo(url: string): boolean {
+        const safeUrl = sanitizeMediaUrl(url, 'media');
+        if (!safeUrl) return false;
+
         const video = document.createElement('video');
-        video.src = url;
+        video.src = safeUrl;
         video.controls = true;
         return this.insertNode(video);
     }
