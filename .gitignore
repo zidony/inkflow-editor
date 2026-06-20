@@ -10,6 +10,7 @@ node_modules/
 # 2. 编译产物 (Build output)
 dist/
 dist-ssr/
+demo-dist/
 *.local
 
 # 3. 日志文件与缓存 (Logs and caches)
