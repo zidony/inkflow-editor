@@ -74,6 +74,59 @@ export class CommandAdapter {
         return this.insertNode(link);
     }
 
+    /**
+     * Returns the anchor element containing the current selection, or null.
+     */
+    public getActiveLink(): HTMLAnchorElement | null {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return null;
+
+        const node = selection.anchorNode;
+        if (!node || !this.editorArea.contains(node)) return null;
+
+        const element = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
+        const anchor = element?.closest<HTMLAnchorElement>('a');
+        return anchor && this.editorArea.contains(anchor) ? anchor : null;
+    }
+
+    /**
+     * Updates the href of the anchor at the current selection.
+     */
+    public updateLink(anchor: HTMLAnchorElement, url: string): boolean {
+        const safeUrl = sanitizeHref(url);
+        if (!safeUrl) return false;
+
+        anchor.setAttribute('href', safeUrl);
+        anchor.setAttribute('rel', 'noopener noreferrer');
+        this.focus();
+        return true;
+    }
+
+    /**
+     * Unwraps an anchor element, keeping its text content in place.
+     */
+    public unlink(anchor: HTMLAnchorElement): boolean {
+        const parent = anchor.parentNode;
+        if (!parent) return false;
+
+        const range = document.createRange();
+        while (anchor.firstChild) {
+            parent.insertBefore(anchor.firstChild, anchor);
+        }
+        // Select the unwrapped content so the caret stays where the link was.
+        anchor.remove();
+        this.focus();
+        // Collapse selection to the parent to avoid a dangling range.
+        const selection = window.getSelection();
+        if (selection) {
+            range.selectNodeContents(parent);
+            range.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+        return true;
+    }
+
     public insertImage(url: string): boolean {
         const safeUrl = sanitizeMediaUrl(url, 'image');
         if (!safeUrl) return false;
@@ -197,6 +250,139 @@ export class CommandAdapter {
         if (firstCell) {
             this.placeCaretAtStart(firstCell);
         }
+        return true;
+    }
+
+    /**
+     * Returns the table cell containing the current selection, or null.
+     */
+    public getActiveCell(): HTMLTableCellElement | null {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return null;
+
+        const node = selection.anchorNode;
+        if (!node || !this.editorArea.contains(node)) return null;
+
+        const element = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
+        const cell = element?.closest<HTMLTableCellElement>('td,th');
+        return cell && this.editorArea.contains(cell) ? cell : null;
+    }
+
+    private newCell(): HTMLTableCellElement {
+        const cell = document.createElement('td');
+        cell.appendChild(document.createElement('br'));
+        return cell;
+    }
+
+    /**
+     * Inserts a row relative to the active cell's row.
+     * @param position 'before' or 'after' the current row.
+     */
+    public insertTableRow(position: 'before' | 'after' = 'after'): boolean {
+        const cell = this.getActiveCell();
+        const row = cell?.parentElement as HTMLTableRowElement | undefined;
+        if (!cell || !row || row.tagName !== 'TR') return false;
+
+        const colCount = row.children.length;
+        const newRow = document.createElement('tr');
+        for (let i = 0; i < colCount; i++) {
+            newRow.appendChild(this.newCell());
+        }
+
+        if (position === 'before') {
+            row.before(newRow);
+        } else {
+            row.after(newRow);
+        }
+        this.focus();
+        this.placeCaretAtStart(newRow.firstElementChild || newRow);
+        return true;
+    }
+
+    /**
+     * Inserts a column relative to the active cell's column index.
+     * @param position 'before' or 'after' the current column.
+     */
+    public insertTableColumn(position: 'before' | 'after' = 'after'): boolean {
+        const cell = this.getActiveCell();
+        const table = cell?.closest('table');
+        if (!cell || !table) return false;
+
+        const cellIndex = (cell as HTMLTableCellElement).cellIndex;
+        const rows = Array.from(table.querySelectorAll('tr'));
+        rows.forEach(row => {
+            const reference = row.children[cellIndex];
+            const newCell = this.newCell();
+            if (reference) {
+                if (position === 'before') {
+                    reference.before(newCell);
+                } else {
+                    reference.after(newCell);
+                }
+            } else {
+                row.appendChild(newCell);
+            }
+        });
+        this.focus();
+        return true;
+    }
+
+    /**
+     * Deletes the active cell's row. Removes the whole table if it was the last row.
+     */
+    public deleteTableRow(): boolean {
+        const cell = this.getActiveCell();
+        const row = cell?.parentElement as HTMLTableRowElement | undefined;
+        const table = cell?.closest('table');
+        if (!cell || !row || !table) return false;
+
+        const allRows = table.querySelectorAll('tr');
+        if (allRows.length <= 1) {
+            return this.deleteTable();
+        }
+
+        const nextRow = (row.nextElementSibling || row.previousElementSibling) as HTMLElement | null;
+        row.remove();
+        this.focus();
+        if (nextRow) {
+            this.placeCaretAtStart(nextRow.firstElementChild || nextRow);
+        }
+        return true;
+    }
+
+    /**
+     * Deletes the active cell's column. Removes the whole table if it was the last column.
+     */
+    public deleteTableColumn(): boolean {
+        const cell = this.getActiveCell();
+        const table = cell?.closest('table');
+        if (!cell || !table) return false;
+
+        const cellIndex = (cell as HTMLTableCellElement).cellIndex;
+        const rows = Array.from(table.querySelectorAll('tr'));
+        const colCount = rows[0]?.children.length || 0;
+        if (colCount <= 1) {
+            return this.deleteTable();
+        }
+
+        rows.forEach(row => {
+            const target = row.children[cellIndex];
+            if (target) target.remove();
+        });
+        this.focus();
+        return true;
+    }
+
+    /**
+     * Removes the entire table containing the active cell.
+     */
+    public deleteTable(): boolean {
+        const cell = this.getActiveCell();
+        const table = cell?.closest('table');
+        if (!table) return false;
+
+        table.remove();
+        this.focus();
         return true;
     }
 

@@ -1,4 +1,5 @@
 import { Toolbar } from '../ui/toolbar';
+import { TableTools } from '../ui/table-tools';
 import type { InkflowOptions, ThemeClasses, EditorInstance, LocaleDict, StatusDict, ToolbarLayout } from '../types/index';
 import { inkflowTheme } from '../themes/inkflow';
 import { HistoryManager } from './history';
@@ -46,8 +47,10 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
 
     private isSourceMode: boolean = false;
     private isDestroyed: boolean = false;
+    private isReadOnlyMode: boolean = false;
     private activeResizingImage: HTMLImageElement | null = null;
     private toolbarInstance!: Toolbar;
+    private tableTools!: TableTools;
     private commands!: CommandAdapter;
     private history!: HistoryManager;
     private historyTimeout: number | null = null;
@@ -62,6 +65,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
 
     private resizeListener = () => {
         if (this.activeResizingImage) this.updateResizerPosition(this.activeResizingImage);
+        this.tableTools?.update();
     };
 
     // ============================================================================
@@ -132,6 +136,13 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         this.containerEl.appendChild(this.wrapperEl);
 
         this.initializeToolbar();
+        this.tableTools = new TableTools(
+            this.wrapperEl,
+            this.editorAreaEl,
+            this.commands,
+            this.locale,
+            () => this.saveHistoryNow()
+        );
         this.bindEvents();
         this.updateStatusBar();
 
@@ -157,7 +168,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     private createEditorArea(): void {
         this.editorAreaEl = document.createElement('div');
         this.editorAreaEl.className = this.theme.editorArea;
-        this.editorAreaEl.contentEditable = 'true';
+        this.editorAreaEl.setAttribute('contenteditable', 'true');
         if (this.options.placeholder) {
             this.editorAreaEl.dataset.placeholder = this.options.placeholder;
         }
@@ -398,6 +409,103 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     }
 
     /**
+     * Inserts sanitized HTML at the current caret position.
+     */
+    public insertHTML(html: string): void {
+        if (this.isDestroyed || this.isReadOnlyMode || this.isSourceMode) return;
+
+        this.editorAreaEl.focus();
+        this.commands.insertHTML(this.parseEmojiHTML(sanitizeHTML(html)));
+        this.saveHistoryNow();
+    }
+
+    /**
+     * Clears all editor content.
+     */
+    public clear(): void {
+        if (this.isDestroyed) return;
+        this.setHTML('');
+    }
+
+    /**
+     * Returns true when the editor has no meaningful content.
+     */
+    public isEmpty(): boolean {
+        if (this.isSourceMode) {
+            return sanitizeHTML(this.sourceCodeEl.value).trim() === '';
+        }
+        return this.isEditorEmpty();
+    }
+
+    /**
+     * Moves keyboard focus into the editor surface.
+     */
+    public focus(): void {
+        if (this.isDestroyed) return;
+        if (this.isSourceMode) {
+            this.sourceCodeEl.focus();
+        } else {
+            this.editorAreaEl.focus();
+        }
+    }
+
+    /**
+     * Removes keyboard focus from the editor surface.
+     */
+    public blur(): void {
+        if (this.isDestroyed) return;
+        if (this.isSourceMode) {
+            this.sourceCodeEl.blur();
+        } else {
+            this.editorAreaEl.blur();
+        }
+    }
+
+    /**
+     * Toggles read-only mode, disabling editing and the toolbar.
+     */
+    public setReadOnly(readOnly: boolean): void {
+        if (this.isDestroyed) return;
+        this.isReadOnlyMode = readOnly;
+
+        this.editorAreaEl.setAttribute('contenteditable', readOnly ? 'false' : 'true');
+        this.sourceCodeEl.readOnly = readOnly;
+        this.wrapperEl.classList.toggle('is-readonly', readOnly);
+
+        if (readOnly) {
+            this.tableTools.hide();
+        }
+
+        // Keep the source/visual toggle usable; only gate it in source mode.
+        if (!this.isSourceMode) {
+            this.toolbarInstance.setDisabled(readOnly);
+        }
+    }
+
+    /**
+     * Returns true when the editor is in read-only mode.
+     */
+    public isReadOnly(): boolean {
+        return this.isReadOnlyMode;
+    }
+
+    /**
+     * Reverts to the previous history snapshot.
+     */
+    public undo(): void {
+        if (this.isDestroyed) return;
+        this.performUndo();
+    }
+
+    /**
+     * Re-applies the next history snapshot.
+     */
+    public redo(): void {
+        if (this.isDestroyed) return;
+        this.performRedo();
+    }
+
+    /**
      * Triggers an immediate history snapshot save.
      */
     public saveHistoryNow(): void {
@@ -448,6 +556,9 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         if (this.toolbarInstance) {
             this.toolbarInstance.destroy();
         }
+        if (this.tableTools) {
+            this.tableTools.destroy();
+        }
 
         // 5. Unsubscribe all Event Emitter handlers
         this.clear();
@@ -489,6 +600,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         // Scroll and resize tracking for resizer overlay
         this.editorAreaEl.addEventListener('scroll', () => {
             if (this.activeResizingImage) this.updateResizerPosition(this.activeResizingImage);
+            this.tableTools.update();
         });
         window.addEventListener('resize', this.resizeListener);
 
@@ -560,6 +672,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         if (sel && sel.rangeCount > 0) {
             this.savedRange = sel.getRangeAt(0).cloneRange();
         }
+        this.tableTools.update();
     }
 
     private clearImageSelection(): void {
@@ -629,7 +742,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
 
     private handlePasteEvent(e: ClipboardEvent): void {
         e.preventDefault();
-        if (!e.clipboardData) return;
+        if (this.isReadOnlyMode || !e.clipboardData) return;
 
         const hasImageFile =
             !!e.clipboardData.files &&
@@ -688,7 +801,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
     }
 
     private handleDropEvent(e: DragEvent): void {
-        if (!e.dataTransfer) return;
+        if (this.isReadOnlyMode || !e.dataTransfer) return;
 
         const files = e.dataTransfer.files;
         if (!files || files.length === 0) return;
@@ -818,6 +931,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             this.editorAreaEl.style.display = 'none';
             this.sourceCodeEl.style.display = 'block';
             this.toolbarInstance.setDisabled(true);
+            this.tableTools.hide();
         } else {
             const sanitizedHtml = sanitizeHTML(this.sourceCodeEl.value);
             const formattedHtml = this.formatOutputHTML(sanitizedHtml);
@@ -1076,22 +1190,18 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             i.replaceWith(em);
         });
 
-        // 3. Purge empty inline styling junk tags (e.g. empty strong or em left by browsers)
-        const inlineFormattingTags = ['strong', 'em', 'u', 'span', 'code', 'del', 'a'];
-        let foundEmptyInline = true;
-        while (foundEmptyInline) {
-            foundEmptyInline = false;
-            const elements = body.querySelectorAll('*');
-            for (let i = 0; i < elements.length; i++) {
-                const el = elements[i];
-                const tagName = el.tagName.toLowerCase();
-                if (inlineFormattingTags.includes(tagName)) {
-                    if (el.childNodes.length === 0 || el.innerHTML.trim() === '') {
-                        el.remove();
-                        foundEmptyInline = true;
-                        break;
-                    }
-                }
+        // 3. Purge empty inline styling junk tags (e.g. empty strong or em left by browsers).
+        //    querySelectorAll returns elements in document order (parent before
+        //    child), so iterating in reverse visits children before parents.
+        //    A single pass then collapses nested empties (e.g. <strong><em></em></strong>)
+        //    without the previous O(n^2) restart-from-scratch loop.
+        const inlineFormattingTags = new Set(['strong', 'em', 'u', 'span', 'code', 'del', 'a']);
+        const allElements = Array.from(body.querySelectorAll('*'));
+        for (let i = allElements.length - 1; i >= 0; i--) {
+            const el = allElements[i];
+            if (!inlineFormattingTags.has(el.tagName.toLowerCase())) continue;
+            if (el.childNodes.length === 0 || el.innerHTML.trim() === '') {
+                el.remove();
             }
         }
 

@@ -42,7 +42,17 @@ export const enUS: LocaleDict = {
         redo: 'Redo',
         sourceCode: 'Source Code',
         fullscreen: 'Fullscreen',
-        emoji: 'Emoji'
+        emoji: 'Emoji',
+
+        // Table context actions
+        tableTools: 'Table tools',
+        rowAbove: 'Insert row above',
+        rowBelow: 'Insert row below',
+        colLeft: 'Insert column left',
+        colRight: 'Insert column right',
+        deleteRow: 'Delete row',
+        deleteCol: 'Delete column',
+        deleteTable: 'Delete table'
     },
     emojiCategories: {
         '表情': 'Smileys',

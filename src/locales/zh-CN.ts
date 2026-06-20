@@ -42,7 +42,17 @@ export const zhCN: LocaleDict = {
         redo: '重做',
         sourceCode: '源码模式',
         fullscreen: '全屏',
-        emoji: '表情'
+        emoji: '表情',
+
+        // Table context actions
+        tableTools: '表格操作',
+        rowAbove: '在上方插入行',
+        rowBelow: '在下方插入行',
+        colLeft: '在左侧插入列',
+        colRight: '在右侧插入列',
+        deleteRow: '删除行',
+        deleteCol: '删除列',
+        deleteTable: '删除表格'
     },
     emojiCategories: {
         '表情': '表情',

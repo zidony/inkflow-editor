@@ -259,15 +259,35 @@ export class Toolbar {
         const savedRange = this.saveSelection();
         if (!savedRange) return;
 
+        // Detect an existing link at the caret so the action becomes
+        // edit / remove rather than always creating a new one.
+        const activeLink = this.commands.getActiveLink();
+        const currentUrl = activeLink?.getAttribute('href') || this.locale.prompts.linkDefault;
+
         const url = this.hooks?.onInsertLink
             ? await this.hooks.onInsertLink()
-            : window.prompt(this.locale.prompts.linkUrl, this.locale.prompts.linkDefault);
+            : window.prompt(this.locale.prompts.linkUrl, currentUrl);
 
-        const safeUrl = url ? sanitizeHref(url) : null;
-        if (!safeUrl) return;
+        // Null means the user cancelled; leave the link untouched.
+        if (url === null || url === undefined) return;
 
         this.restoreSelection(savedRange);
-        this.commands.createLink(safeUrl);
+
+        // Clearing the URL of an existing link removes the link.
+        if (activeLink && url.trim() === '') {
+            this.commands.unlink(activeLink);
+            this.postAsyncCommand();
+            return;
+        }
+
+        const safeUrl = sanitizeHref(url);
+        if (!safeUrl) return;
+
+        if (activeLink) {
+            this.commands.updateLink(activeLink, safeUrl);
+        } else {
+            this.commands.createLink(safeUrl);
+        }
         this.postAsyncCommand();
     }
 

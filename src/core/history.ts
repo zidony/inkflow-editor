@@ -7,6 +7,7 @@ export class HistoryManager {
     private currentIndex: number = -1;
     private readonly MAX_HISTORY_LENGTH = 50;
     private readonly MAX_HISTORY_BYTES = 5 * 1024 * 1024; // 5MB total memory limit
+    private totalBytes = 0;
 
     /**
      * Initializes a new history manager with an optional initial state.
@@ -17,11 +18,10 @@ export class HistoryManager {
     }
 
     /**
-     * Calculates the rough memory footprint of the current history stack.
+     * Rough memory footprint of a snapshot (JS strings are UTF-16, ~2 bytes/char).
      */
-    private getStackByteSize(): number {
-        // JS strings are UTF-16, roughly 2 bytes per character
-        return this.stack.reduce((total, html) => total + html.length * 2, 0);
+    private byteSizeOf(html: string): number {
+        return html.length * 2;
     }
 
     /**
@@ -36,20 +36,27 @@ export class HistoryManager {
             return false;
         }
 
+        // Drop any redo states ahead of the cursor, reclaiming their bytes.
         if (this.currentIndex < this.stack.length - 1) {
+            for (let i = this.currentIndex + 1; i < this.stack.length; i++) {
+                this.totalBytes -= this.byteSizeOf(this.stack[i]);
+            }
             this.stack = this.stack.slice(0, this.currentIndex + 1);
         }
 
         this.stack.push(html);
+        this.totalBytes += this.byteSizeOf(html);
         this.currentIndex++;
 
-        // Prune stack if it exceeds max length OR max memory (preventing memory leaks)
+        // Prune from the front if the stack exceeds max length or memory.
+        // Byte accounting is incremental, so each prune is O(1).
         while (
             (this.stack.length > this.MAX_HISTORY_LENGTH ||
-                this.getStackByteSize() > this.MAX_HISTORY_BYTES) &&
+                this.totalBytes > this.MAX_HISTORY_BYTES) &&
             this.stack.length > 1
         ) {
-            this.stack.shift();
+            const removed = this.stack.shift() as string;
+            this.totalBytes -= this.byteSizeOf(removed);
             this.currentIndex--;
         }
 

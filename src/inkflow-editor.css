@@ -113,6 +113,13 @@
     transform: scale(0.96);
 }
 
+/* Keyboard focus ring (mouse clicks stay ring-free via :focus-visible). */
+.inkflow-btn:focus-visible,
+.inkflow-select:focus-visible {
+    outline: 2px solid var(--inkflow-primary);
+    outline-offset: 1px;
+}
+
 .inkflow-btn.is-active,
 .inkflow-btn[aria-pressed='true'] {
     background: var(--inkflow-primary-light);
@@ -315,6 +322,43 @@
 
 .inkflow-editor-body tr:hover td {
     background-color: var(--inkflow-bg-hover);
+}
+
+/* Floating table context toolbar */
+.inkflow-table-tools {
+    position: absolute;
+    z-index: 30;
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    background: var(--inkflow-bg-toolbar, #fff);
+    border: 1px solid var(--inkflow-border);
+    border-radius: 6px;
+    box-shadow: var(--inkflow-shadow-dropdown, 0 4px 12px rgba(0, 0, 0, 0.12));
+}
+
+.inkflow-table-tool-btn {
+    min-width: 26px;
+    height: 26px;
+    padding: 0 6px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+    color: var(--inkflow-text-muted);
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.inkflow-table-tool-btn:hover {
+    background: var(--inkflow-bg-hover);
+    color: var(--inkflow-text-main);
+}
+
+.inkflow-table-tool-btn:focus-visible {
+    outline: 2px solid var(--inkflow-primary);
+    outline-offset: 1px;
 }
 
 /* Images & Video Selection outline */
@@ -776,4 +820,21 @@
     vertical-align: -0.2em;
     margin: 0 0.05em;
     display: inline-block;
+}
+
+/* ============================================================
+   REDUCED MOTION
+   Respect the user's OS-level "reduce motion" preference.
+   Scoped to the editor so the host page is never affected.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+    .inkflow-container,
+    .inkflow-container *,
+    .inkflow-container *::before,
+    .inkflow-container *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+    }
 }

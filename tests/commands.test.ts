@@ -294,4 +294,102 @@ describe('CommandAdapter', () => {
         expect(commands.insertTable(2, -1)).toBe(false);
         expect(editor.innerHTML).toBe('<p>Before</p>');
     });
+
+    it('updates an existing link href and unwraps it on unlink', () => {
+        const editor = createEditor('<p><a href="https://old.com">site</a></p>');
+        const anchor = editor.querySelector('a') as HTMLAnchorElement;
+        placeCaretAtEnd(anchor);
+
+        const commands = new CommandAdapter(editor);
+        const active = commands.getActiveLink();
+        expect(active).toBe(anchor);
+
+        commands.updateLink(anchor, 'https://new.com');
+        expect(editor.querySelector('a')?.getAttribute('href')).toBe('https://new.com');
+
+        commands.unlink(editor.querySelector('a') as HTMLAnchorElement);
+        expect(editor.querySelector('a')).toBeNull();
+        expect(editor.textContent).toBe('site');
+    });
+
+    it('rejects unsafe URLs when updating a link', () => {
+        const editor = createEditor('<p><a href="https://ok.com">site</a></p>');
+        const anchor = editor.querySelector('a') as HTMLAnchorElement;
+
+        const commands = new CommandAdapter(editor);
+        expect(commands.updateLink(anchor, 'javascript:alert(1)')).toBe(false);
+        expect(anchor.getAttribute('href')).toBe('https://ok.com');
+    });
+
+    function caretInFirstCell(editor: HTMLElement): void {
+        const cell = editor.querySelector('td') as HTMLTableCellElement;
+        placeCaretAtEnd(cell);
+    }
+
+    it('inserts a row after the active cell row', () => {
+        const editor = createEditor(
+            '<table><tbody><tr><td>a</td><td>b</td></tr></tbody></table>'
+        );
+        caretInFirstCell(editor);
+
+        const commands = new CommandAdapter(editor);
+        expect(commands.insertTableRow('after')).toBe(true);
+        expect(editor.querySelectorAll('tr')).toHaveLength(2);
+        expect(editor.querySelectorAll('tr')[1].children).toHaveLength(2);
+    });
+
+    it('inserts a column before the active cell column', () => {
+        const editor = createEditor(
+            '<table><tbody><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></tbody></table>'
+        );
+        const secondCell = editor.querySelectorAll('td')[1] as HTMLTableCellElement;
+        placeCaretAtEnd(secondCell);
+
+        const commands = new CommandAdapter(editor);
+        expect(commands.insertTableColumn('before')).toBe(true);
+        expect(editor.querySelectorAll('tr')[0].children).toHaveLength(3);
+        expect(editor.querySelectorAll('tr')[1].children).toHaveLength(3);
+    });
+
+    it('deletes the active row but keeps the rest of the table', () => {
+        const editor = createEditor(
+            '<table><tbody><tr><td>a</td></tr><tr><td>b</td></tr></tbody></table>'
+        );
+        caretInFirstCell(editor);
+
+        const commands = new CommandAdapter(editor);
+        expect(commands.deleteTableRow()).toBe(true);
+        expect(editor.querySelectorAll('tr')).toHaveLength(1);
+        expect(editor.querySelector('td')?.textContent).toBe('b');
+    });
+
+    it('removes the whole table when deleting the last row', () => {
+        const editor = createEditor('<table><tbody><tr><td>a</td></tr></tbody></table>');
+        caretInFirstCell(editor);
+
+        const commands = new CommandAdapter(editor);
+        expect(commands.deleteTableRow()).toBe(true);
+        expect(editor.querySelector('table')).toBeNull();
+    });
+
+    it('removes the whole table when deleting the last column', () => {
+        const editor = createEditor(
+            '<table><tbody><tr><td>a</td></tr><tr><td>b</td></tr></tbody></table>'
+        );
+        caretInFirstCell(editor);
+
+        const commands = new CommandAdapter(editor);
+        expect(commands.deleteTableColumn()).toBe(true);
+        expect(editor.querySelector('table')).toBeNull();
+    });
+
+    it('returns false for table ops when the caret is outside a table', () => {
+        const editor = createEditor('<p>Not a table</p>');
+        const paragraph = editor.querySelector('p') as HTMLParagraphElement;
+        placeCaretAtEnd(paragraph);
+
+        const commands = new CommandAdapter(editor);
+        expect(commands.insertTableRow('after')).toBe(false);
+        expect(commands.deleteTable()).toBe(false);
+    });
 });

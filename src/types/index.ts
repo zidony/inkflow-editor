@@ -116,6 +116,24 @@ export interface EditorInstance {
     getText(): string;
     /** Programmatically sets the HTML content of the editor. */
     setHTML(html: string): void;
+    /** Inserts sanitized HTML at the current caret position. */
+    insertHTML(html: string): void;
+    /** Clears all editor content. */
+    clear(): void;
+    /** Returns true when the editor has no meaningful content. */
+    isEmpty(): boolean;
+    /** Moves keyboard focus into the editor. */
+    focus(): void;
+    /** Removes keyboard focus from the editor. */
+    blur(): void;
+    /** Toggles read-only mode, disabling editing and the toolbar. */
+    setReadOnly(readOnly: boolean): void;
+    /** Returns true when the editor is in read-only mode. */
+    isReadOnly(): boolean;
+    /** Reverts to the previous history snapshot. */
+    undo(): void;
+    /** Re-applies the next history snapshot. */
+    redo(): void;
     /** Immediately saves the current content into the undo history and emits a change event when content changed. */
     saveHistoryNow(): void;
     /** Completely removes the editor from the DOM and cleans up resources. */

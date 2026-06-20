@@ -151,11 +151,29 @@ const editor = new InkflowEditor({
 ## API
 
 ```ts
+// 内容
 editor.getHTML();
 editor.getText();
 editor.setHTML('<p>Hello</p>');
+editor.insertHTML('<strong>插入到光标处</strong>');
+editor.clear();
+editor.isEmpty();
+
+// 焦点与模式
+editor.focus();
+editor.blur();
+editor.setReadOnly(true);
+editor.isReadOnly();
+
+// 历史
+editor.undo();
+editor.redo();
+editor.saveHistoryNow();
+
+// 生命周期
 editor.destroy();
 
+// 事件
 editor.on('ready', instance => {});
 editor.on('change', html => {});
 editor.on('focus', () => {});

@@ -151,11 +151,29 @@ const editor = new InkflowEditor({
 ## API
 
 ```ts
+// Content
 editor.getHTML();
 editor.getText();
 editor.setHTML('<p>Hello</p>');
+editor.insertHTML('<strong>at caret</strong>');
+editor.clear();
+editor.isEmpty();
+
+// Focus & mode
+editor.focus();
+editor.blur();
+editor.setReadOnly(true);
+editor.isReadOnly();
+
+// History
+editor.undo();
+editor.redo();
+editor.saveHistoryNow();
+
+// Lifecycle
 editor.destroy();
 
+// Events
 editor.on('ready', instance => {});
 editor.on('change', html => {});
 editor.on('focus', () => {});
