@@ -175,6 +175,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
 
         if (this.options.height) {
             this.editorAreaEl.style.height = this.options.height;
+            this.editorAreaEl.style.minHeight = this.options.height;
             this.editorAreaEl.style.overflowY = 'auto';
         }
     }
@@ -187,6 +188,7 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
 
         if (this.options.height) {
             this.sourceCodeEl.style.height = this.options.height;
+            this.sourceCodeEl.style.minHeight = this.options.height;
             this.sourceCodeEl.style.overflowY = 'auto';
         }
     }
