@@ -57,9 +57,9 @@ describe('InkflowEditor toolbar options', () => {
         const { container, editor } = createEditor();
         const groups = getToolbarGroups(container);
         const blockGroupIndex = findToolbarGroupIndex(groups, [
+            'Insert Table',
             'Code Block',
             'Blockquote',
-            'Insert Table',
             'Divider'
         ]);
         const resourceGroupIndex = findToolbarGroupIndex(groups, [

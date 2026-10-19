@@ -95,13 +95,13 @@ export interface InkflowOptions {
      * Lifecycle and action hooks for external integration.
      */
     hooks?: {
-        /** Hook invoked when inserting a link. Should resolve to a URL or null. */
+        /** Hook invoked when inserting a link. Resolve to a URL, or null when the user cancels. */
         onInsertLink?: () => Promise<string | null>;
-        /** Hook invoked when inserting an image. Should resolve to a URL or null. */
+        /** Hook invoked when inserting an image. Resolve to a URL, or null when the user cancels. */
         onInsertImage?: () => Promise<string | null>;
         /** Hook invoked when a raw image file is pasted or dropped. Should resolve to a URL or null. */
         onUploadImage?: (file: File) => Promise<string | null>;
-        /** Hook invoked when inserting a video. Should resolve to a URL or null. */
+        /** Hook invoked when inserting a video. Resolve to a URL, or null when the user cancels. */
         onInsertVideo?: () => Promise<string | null>;
     };
 }

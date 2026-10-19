@@ -148,6 +148,22 @@ const editor = new InkflowEditor({
 });
 ```
 
+Insert hooks must resolve to a URL, or `null` when the user cancels —
+the same contract as a native `window.prompt` cancellation. Do not
+`reject()` to signal a cancellation.
+
+If an insert hook throws or rejects anyway (e.g. a failed upload), the
+editor contains the error instead of leaking an unhandled rejection into
+the host page: the insertion is treated as a cancellation, and the error
+is surfaced via `editor.on('hookError', ...)` (as well as a bubbling
+`inkflow-hook-error` `CustomEvent` on the toolbar):
+
+```ts
+editor.on('hookError', ({ hook, error }) => {
+    console.error(hook, 'failed:', error);
+});
+```
+
 ## API
 
 ```ts

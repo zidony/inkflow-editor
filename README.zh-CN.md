@@ -148,6 +148,19 @@ const editor = new InkflowEditor({
 });
 ```
 
+插入类 Hook 必须 resolve 一个 URL；用户取消时应 resolve `null` —— 这与原生
+`window.prompt` 点击“取消”返回 `null` 的语义一致。请不要用 `reject()` 表示用户取消。
+
+即使 Hook 仍然抛错或 reject（例如上传失败），编辑器也会将该错误“收口”：插入操作
+按取消处理，不会向宿主页面泄漏 unhandled rejection，同时会触发 `editor.on('hookError', ...)`
+事件（以及在工具栏元素上派发可冒泡的 `inkflow-hook-error` `CustomEvent`）：
+
+```ts
+editor.on('hookError', ({ hook, error }) => {
+    console.error(hook, '失败：', error);
+});
+```
+
 ## API
 
 ```ts

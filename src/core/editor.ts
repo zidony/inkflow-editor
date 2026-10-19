@@ -333,8 +333,8 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
 
     private createFullToolbarLayout(): ToolbarLayout {
         const blockTools = this.options.emoji
-            ? ['codeBlock', 'blockquote', 'table', 'divider', 'emoji']
-            : ['codeBlock', 'blockquote', 'table', 'divider'];
+            ? ['table', 'codeBlock', 'blockquote', 'divider', 'emoji']
+            : ['table', 'codeBlock', 'blockquote', 'divider'];
 
         return [
             ['heading'],
@@ -666,6 +666,11 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         // Custom Commands from Toolbar (e.g., fullscreen, codeblock, table)
         this.toolbarEl.addEventListener('inkflow-custom-command', (e: Event) =>
             this.handleCustomCommand(e as CustomEvent)
+        );
+
+        // Hook errors from Toolbar async insert handlers
+        this.toolbarEl.addEventListener('inkflow-hook-error', (e: Event) =>
+            this.emit('hookError', (e as CustomEvent).detail)
         );
     }
 

@@ -264,9 +264,9 @@ export class Toolbar {
         const activeLink = this.commands.getActiveLink();
         const currentUrl = activeLink?.getAttribute('href') || this.locale.prompts.linkDefault;
 
-        const url = this.hooks?.onInsertLink
-            ? await this.hooks.onInsertLink()
-            : window.prompt(this.locale.prompts.linkUrl, currentUrl);
+        const url = await this.resolveInsertUrl('onInsertLink', () =>
+            window.prompt(this.locale.prompts.linkUrl, currentUrl)
+        );
 
         // Null means the user cancelled; leave the link untouched.
         if (url === null || url === undefined) return;
@@ -295,9 +295,9 @@ export class Toolbar {
         const savedRange = this.saveSelection();
         if (!savedRange) return;
 
-        const url = this.hooks?.onInsertImage
-            ? await this.hooks.onInsertImage()
-            : window.prompt(this.locale.prompts.imageUrl, this.locale.prompts.linkDefault);
+        const url = await this.resolveInsertUrl('onInsertImage', () =>
+            window.prompt(this.locale.prompts.imageUrl, this.locale.prompts.linkDefault)
+        );
 
         const safeUrl = url ? sanitizeMediaUrl(url, 'image') : null;
         if (!safeUrl) return;
@@ -311,9 +311,9 @@ export class Toolbar {
         const savedRange = this.saveSelection();
         if (!savedRange) return;
 
-        const url = this.hooks?.onInsertVideo
-            ? await this.hooks.onInsertVideo()
-            : window.prompt(this.locale.prompts.videoUrl, this.locale.prompts.linkDefault);
+        const url = await this.resolveInsertUrl('onInsertVideo', () =>
+            window.prompt(this.locale.prompts.videoUrl, this.locale.prompts.linkDefault)
+        );
 
         if (!url) return;
 
@@ -329,6 +329,39 @@ export class Toolbar {
             return;
         }
         this.postAsyncCommand();
+    }
+
+    /**
+     * Resolves the URL for an async insert action (link / image / video).
+     *
+     * Prefers the external hook when configured and falls back to the native
+     * `window.prompt` otherwise. Errors thrown (or rejected promises) by a
+     * third-party hook are contained here: a misbehaving consumer integration
+     * must never surface as an unhandled rejection in the host page. The error
+     * is surfaced through an `inkflow-hook-error` event on the toolbar
+     * container so hosts can log or report it if they want to.
+     *
+     * @returns The resolved URL, or null when the action was cancelled or failed.
+     */
+    private async resolveInsertUrl(
+        hookName: 'onInsertLink' | 'onInsertImage' | 'onInsertVideo',
+        fallback: () => string | null
+    ): Promise<string | null> {
+        const hook = this.hooks?.[hookName];
+        if (!hook) return fallback();
+
+        try {
+            const url = await hook();
+            return url ?? null;
+        } catch (error) {
+            this.container.dispatchEvent(
+                new CustomEvent('inkflow-hook-error', {
+                    bubbles: true,
+                    detail: { hook: hookName, error }
+                })
+            );
+            return null;
+        }
     }
 
     private saveSelection(): Range | null {
