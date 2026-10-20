@@ -42,7 +42,7 @@ const ALLOWED_TAGS = new Set([
 const GLOBAL_ATTRIBUTES = new Set(['title', 'aria-label']);
 
 const TAG_ATTRIBUTES: Record<string, Set<string>> = {
-    a: new Set(['href', 'target', 'rel']),
+    a: new Set(['href', 'target', 'rel', 'download', 'class']),
     iframe: new Set(['src', 'allow', 'allowfullscreen', 'frameborder', 'height', 'loading', 'title', 'width']),
     img: new Set(['alt', 'class', 'draggable', 'height', 'loading', 'src', 'width']),
     source: new Set(['src', 'type']),
@@ -165,10 +165,11 @@ function sanitizeElement(element: Element): void {
             return;
         }
 
-        if (attrName === 'class' && tagName === 'img') {
+        if (attrName === 'class' && (tagName === 'img' || tagName === 'a')) {
+            const allowedClass = tagName === 'img' ? 'inkflow-emoji' : 'inkflow-attachment';
             const allowedClasses = attrValue
                 .split(/\s+/)
-                .filter(className => className === 'inkflow-emoji')
+                .filter(className => className === allowedClass)
                 .join(' ');
             if (allowedClasses) {
                 element.setAttribute('class', allowedClasses);

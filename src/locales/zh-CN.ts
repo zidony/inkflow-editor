@@ -32,6 +32,7 @@ export const zhCN: LocaleDict = {
         link: '插入链接',
         image: '插入图片',
         video: '插入视频',
+        attachment: '插入附件',
         codeBlock: '插入代码块',
         blockquote: '引用块',
         table: '插入表格',
@@ -78,6 +79,7 @@ export const zhCN: LocaleDict = {
         linkUrl: '请输入链接地址:',
         imageUrl: '请输入图片地址:',
         videoUrl: '请输入视频链接 (如 MP4 或 B站 iframe):',
+        attachmentUrl: '请输入附件链接:',
         linkDefault: 'https://'
     }
 };

@@ -117,4 +117,29 @@ describe('InkflowEditor insert hooks', () => {
         expect(editor.getHTML()).toContain('href="https://example.com"');
         editor.destroy();
     });
+
+    it('inserts a semantic attachment link when onInsertAttachment resolves', async () => {
+        const onInsertAttachment = vi.fn().mockResolvedValue({
+            url: 'https://example.com/files/report-2026.pdf',
+            name: 'report-2026.pdf',
+            size: '2.4 MB'
+        });
+        const { container, editor } = createEditor({ hooks: { onInsertAttachment } });
+
+        placeCaretInEditor(container);
+        queryToolbarButton(container, 'Insert Attachment')!.click();
+        await vi.waitFor(() => expect(editor.getHTML()).toContain('class="inkflow-attachment"'));
+
+        expect(onInsertAttachment).toHaveBeenCalledOnce();
+        const html = editor.getHTML();
+        expect(html).toContain('href="https://example.com/files/report-2026.pdf"');
+        expect(html).toContain('download="report-2026.pdf"');
+        expect(html).toContain('report-2026.pdf (2.4 MB)');
+
+        // Verify round-trip sanitization preserves class and download attribute
+        editor.setHTML(html);
+        expect(editor.getHTML()).toContain('class="inkflow-attachment"');
+        expect(editor.getHTML()).toContain('download="report-2026.pdf"');
+        editor.destroy();
+    });
 });

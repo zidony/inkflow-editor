@@ -32,6 +32,7 @@ export const enUS: LocaleDict = {
         link: 'Insert Link',
         image: 'Insert Image',
         video: 'Insert Video',
+        attachment: 'Insert Attachment',
         codeBlock: 'Code Block',
         blockquote: 'Blockquote',
         table: 'Insert Table',
@@ -78,6 +79,7 @@ export const enUS: LocaleDict = {
         linkUrl: 'Enter link URL:',
         imageUrl: 'Enter image URL:',
         videoUrl: 'Enter video URL (e.g., MP4 or YouTube iframe):',
+        attachmentUrl: 'Enter attachment URL:',
         linkDefault: 'https://'
     }
 };

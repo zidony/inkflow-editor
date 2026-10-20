@@ -127,7 +127,7 @@ const editor = new InkflowEditor({
 | `lang` | `'en-US' \| 'zh-CN' \| LocaleDict` | Built-in or custom locale. |
 | `height` | `string` | CSS height for the editing area. |
 | `emoji` | `EmojiExtension` | Optional emoji picker extension from `inkflow-editor/emoji`. |
-| `hooks` | `object` | Async hooks for links, images, uploads, and videos. |
+| `hooks` | `object` | Async hooks for links, images, uploads, videos, and attachments. |
 
 `size` controls the visual scale of the editor. `toolbarMode` controls the built-in toolbar preset. A custom `toolbar` layout always takes precedence over `toolbarMode`.
 
@@ -140,6 +140,11 @@ const editor = new InkflowEditor({
         onInsertLink: async () => 'https://example.com',
         onInsertImage: async () => 'https://example.com/image.png',
         onInsertVideo: async () => 'https://example.com/video.mp4',
+        onInsertAttachment: async () => ({
+            url: 'https://example.com/files/manual.pdf',
+            name: 'manual.pdf',
+            size: '1.8 MB'
+        }),
         onUploadImage: async file => {
             // Upload the file and return a public image URL.
             return uploadImage(file);
@@ -148,9 +153,9 @@ const editor = new InkflowEditor({
 });
 ```
 
-Insert hooks must resolve to a URL, or `null` when the user cancels —
+Insert hooks must resolve to a URL (or an `AttachmentResult` object for `onInsertAttachment`), or `null` when the user cancels —
 the same contract as a native `window.prompt` cancellation. Do not
-`reject()` to signal a cancellation.
+`reject()` to signal a cancellation. When `hooks.onInsertAttachment` is configured, the toolbar automatically displays the `attachment` button.
 
 If an insert hook throws or rejects anyway (e.g. a failed upload), the
 editor contains the error instead of leaking an unhandled rejection into

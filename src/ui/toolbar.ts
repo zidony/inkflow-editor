@@ -205,6 +205,7 @@ export class Toolbar {
         if (command === 'link') return void this.handleInsertLink();
         if (command === 'image') return void this.handleInsertImage();
         if (command === 'video') return void this.handleInsertVideo();
+        if (command === 'attachment') return void this.handleInsertAttachment();
 
         const commandMap: Record<string, string> = {
             bold: 'bold',
@@ -253,7 +254,7 @@ export class Toolbar {
     }
 
     // ============================================================================
-    // Async Insert Handlers (Link, Image, Video)
+    // Async Insert Handlers (Link, Image, Video, Attachment)
     // ============================================================================
     private async handleInsertLink(): Promise<void> {
         const savedRange = this.saveSelection();
@@ -331,8 +332,25 @@ export class Toolbar {
         this.postAsyncCommand();
     }
 
+    private async handleInsertAttachment(): Promise<void> {
+        const savedRange = this.saveSelection();
+        if (!savedRange) return;
+
+        const promptLabel = this.locale.prompts.attachmentUrl || this.locale.prompts.linkUrl;
+        const result = await this.resolveInsertUrl('onInsertAttachment', () =>
+            window.prompt(promptLabel, this.locale.prompts.linkDefault)
+        );
+
+        if (!result) return;
+
+        this.restoreSelection(savedRange);
+        if (this.commands.insertAttachment(result)) {
+            this.postAsyncCommand();
+        }
+    }
+
     /**
-     * Resolves the URL for an async insert action (link / image / video).
+     * Resolves the value for an async insert action (link / image / video / attachment).
      *
      * Prefers the external hook when configured and falls back to the native
      * `window.prompt` otherwise. Errors thrown (or rejected promises) by a
@@ -341,18 +359,21 @@ export class Toolbar {
      * is surfaced through an `inkflow-hook-error` event on the toolbar
      * container so hosts can log or report it if they want to.
      *
-     * @returns The resolved URL, or null when the action was cancelled or failed.
+     * @returns The resolved URL/attachment result, or null when the action was cancelled or failed.
      */
-    private async resolveInsertUrl(
-        hookName: 'onInsertLink' | 'onInsertImage' | 'onInsertVideo',
+    private async resolveInsertUrl<
+        K extends 'onInsertLink' | 'onInsertImage' | 'onInsertVideo' | 'onInsertAttachment'
+    >(
+        hookName: K,
         fallback: () => string | null
-    ): Promise<string | null> {
+    ): Promise<Awaited<ReturnType<NonNullable<NonNullable<InkflowOptions['hooks']>[K]>>>> {
+        type HookResult = Awaited<ReturnType<NonNullable<NonNullable<InkflowOptions['hooks']>[K]>>>;
         const hook = this.hooks?.[hookName];
-        if (!hook) return fallback();
+        if (!hook) return fallback() as HookResult;
 
         try {
-            const url = await hook();
-            return url ?? null;
+            const result = await hook();
+            return (result ?? null) as HookResult;
         } catch (error) {
             this.container.dispatchEvent(
                 new CustomEvent('inkflow-hook-error', {
@@ -360,7 +381,7 @@ export class Toolbar {
                     detail: { hook: hookName, error }
                 })
             );
-            return null;
+            return null as HookResult;
         }
     }
 

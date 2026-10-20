@@ -93,12 +93,24 @@ describe('InkflowEditor toolbar options', () => {
         expect(queryToolbarButton(container, 'Redo')).not.toBeNull();
 
         expect(queryToolbarButton(container, 'Insert Video')).toBeNull();
+        expect(queryToolbarButton(container, 'Insert Attachment')).toBeNull();
         expect(queryToolbarButton(container, 'Code Block')).toBeNull();
         expect(queryToolbarButton(container, 'Insert Table')).toBeNull();
         expect(queryToolbarButton(container, 'Divider')).toBeNull();
         expect(queryToolbarButton(container, 'Source Code')).toBeNull();
         expect(queryToolbarButton(container, 'Fullscreen')).toBeNull();
 
+        editor.destroy();
+    });
+
+    it('renders the Insert Attachment button automatically when hooks.onInsertAttachment is configured', () => {
+        const { container, editor } = createEditor({
+            hooks: {
+                onInsertAttachment: async () => null
+            }
+        });
+
+        expect(queryToolbarButton(container, 'Insert Attachment')).not.toBeNull();
         editor.destroy();
     });
 

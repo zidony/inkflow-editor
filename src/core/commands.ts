@@ -2,6 +2,7 @@
  * Small command facade around browser editing APIs.
  * It keeps legacy execCommand usage centralized while high-risk commands move to DOM operations.
  */
+import type { AttachmentResult } from '../types/index';
 import { sanitizeHref, sanitizeMediaUrl } from '../utils/security';
 
 export class CommandAdapter {
@@ -159,6 +160,44 @@ export class CommandAdapter {
         video.src = safeUrl;
         video.controls = true;
         return this.insertNode(video);
+    }
+
+    public insertAttachment(attachment: AttachmentResult | string): boolean {
+        const rawUrl = typeof attachment === 'string' ? attachment : attachment.url;
+        const safeUrl = sanitizeHref(rawUrl);
+        if (!safeUrl) return false;
+
+        const rawName = typeof attachment === 'string' ? '' : (attachment.name?.trim() || '');
+        const size = typeof attachment === 'string' ? '' : (attachment.size?.trim() || '');
+        const displayName = rawName || this.extractAttachmentName(safeUrl);
+        if (!displayName) return false;
+
+        const fragment = document.createDocumentFragment();
+        const link = document.createElement('a');
+        link.href = safeUrl;
+        link.className = 'inkflow-attachment';
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.setAttribute('download', displayName);
+        link.textContent = size ? `${displayName} (${size})` : displayName;
+
+        fragment.appendChild(link);
+        fragment.appendChild(document.createTextNode('\u00A0'));
+        return this.insertFragment(fragment);
+    }
+
+    private extractAttachmentName(url: string): string {
+        try {
+            const parsed = new URL(url, window.location.href);
+            const segments = parsed.pathname.split('/').filter(Boolean);
+            const lastSegment = segments[segments.length - 1];
+            if (lastSegment) {
+                return decodeURIComponent(lastSegment);
+            }
+        } catch {
+            // Fall through to raw URL fallback
+        }
+        return url;
     }
 
     public insertImageUploadPlaceholder(id: string, label: string = 'Image uploading...'): boolean {

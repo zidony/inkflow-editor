@@ -127,7 +127,7 @@ const editor = new InkflowEditor({
 | `lang` | `'en-US' \| 'zh-CN' \| LocaleDict` | 内置或自定义语言包。 |
 | `height` | `string` | 编辑区域 CSS 高度。 |
 | `emoji` | `EmojiExtension` | 来自 `inkflow-editor/emoji` 的可选 emoji 选择器扩展。 |
-| `hooks` | `object` | 链接、图片、上传、视频等异步 Hook。 |
+| `hooks` | `object` | 链接、图片、上传、视频、附件等异步 Hook。 |
 
 `size` 控制编辑器的视觉尺寸，`toolbarMode` 控制内置工具栏显示模式。提供自定义 `toolbar` 时，`toolbar` 始终优先于 `toolbarMode`。
 
@@ -140,6 +140,11 @@ const editor = new InkflowEditor({
         onInsertLink: async () => 'https://example.com',
         onInsertImage: async () => 'https://example.com/image.png',
         onInsertVideo: async () => 'https://example.com/video.mp4',
+        onInsertAttachment: async () => ({
+            url: 'https://example.com/files/manual.pdf',
+            name: 'manual.pdf',
+            size: '1.8 MB'
+        }),
         onUploadImage: async file => {
             // 上传文件，并返回可访问的图片 URL。
             return uploadImage(file);
@@ -148,8 +153,8 @@ const editor = new InkflowEditor({
 });
 ```
 
-插入类 Hook 必须 resolve 一个 URL；用户取消时应 resolve `null` —— 这与原生
-`window.prompt` 点击“取消”返回 `null` 的语义一致。请不要用 `reject()` 表示用户取消。
+插入类 Hook 必须 resolve 一个 URL（`onInsertAttachment` 支持返回 `{ url, name, size }` 对象或 URL 字符串）；用户取消时应 resolve `null` —— 这与原生
+`window.prompt` 点击“取消”返回 `null` 的语义一致。请不要用 `reject()` 表示用户取消。配置 `hooks.onInsertAttachment` 后，工具栏会自动展示“插入附件”按钮。
 
 即使 Hook 仍然抛错或 reject（例如上传失败），编辑器也会将该错误“收口”：插入操作
 按取消处理，不会向宿主页面泄漏 unhandled rejection，同时会触发 `editor.on('hookError', ...)`

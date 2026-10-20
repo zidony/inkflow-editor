@@ -97,6 +97,18 @@ describe('security utilities', () => {
         expect(image.getAttribute('alt')).toBe('emoji');
     });
 
+    it('keeps inkflow-attachment class and download attribute on safe links', () => {
+        const html = sanitizeHTML(
+            '<a class="inkflow-attachment custom-class" href="https://example.com/report.pdf" download="report.pdf" target="_blank">report.pdf (1.2 MB)</a>'
+        );
+        const link = parseBody(html);
+
+        expect(link.getAttribute('class')).toBe('inkflow-attachment');
+        expect(link.getAttribute('download')).toBe('report.pdf');
+        expect(link.getAttribute('href')).toBe('https://example.com/report.pdf');
+        expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    });
+
     it('validates href and media URLs by protocol', () => {
         expect(sanitizeHref('mailto:user@example.com')).toBe('mailto:user@example.com');
         expect(sanitizeHref('tel:+123456789')).toBe('tel:+123456789');

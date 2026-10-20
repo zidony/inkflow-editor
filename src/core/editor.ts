@@ -335,6 +335,9 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
         const blockTools = this.options.emoji
             ? ['table', 'codeBlock', 'blockquote', 'divider', 'emoji']
             : ['table', 'codeBlock', 'blockquote', 'divider'];
+        const mediaTools = this.options.hooks?.onInsertAttachment
+            ? ['link', 'image', 'video', 'attachment']
+            : ['link', 'image', 'video'];
 
         return [
             ['heading'],
@@ -342,18 +345,21 @@ export class InkflowEditor extends EventEmitter implements EditorInstance {
             ['alignLeft', 'alignCenter', 'alignRight'],
             ['listUl', 'listOl'],
             blockTools,
-            ['link', 'image', 'video'],
+            mediaTools,
             ['undo', 'redo'],
             ['sourceCode', 'fullscreen']
         ];
     }
 
     private createBasicToolbarLayout(): ToolbarLayout {
+        const mediaTools = this.options.hooks?.onInsertAttachment
+            ? ['link', 'image', 'attachment']
+            : ['link', 'image'];
         const toolbarLayout: ToolbarLayout = [
             ['heading'],
             ['bold', 'italic', 'underline'],
             ['listUl', 'listOl'],
-            ['link', 'image'],
+            mediaTools,
         ];
 
         if (this.options.emoji) {

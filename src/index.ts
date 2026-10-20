@@ -9,6 +9,7 @@ export { inkflowTheme } from './themes/inkflow';
 
 // 4. Export TypeScript types to provide perfect code completion for integrators
 export type {
+    AttachmentResult,
     EmojiExtension,
     InkflowOptions,
     EditorInstance,

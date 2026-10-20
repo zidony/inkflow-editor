@@ -28,8 +28,21 @@ export interface LocaleDict {
         linkUrl: string;
         imageUrl: string;
         videoUrl: string;
+        attachmentUrl?: string;
         linkDefault: string;
     };
+}
+
+/**
+ * Metadata returned by `hooks.onInsertAttachment`.
+ */
+export interface AttachmentResult {
+    /** Download or preview URL of the attachment. */
+    url: string;
+    /** Display file name (e.g., "report-2026.pdf"). Falls back to the URL filename when omitted. */
+    name?: string;
+    /** Optional human-readable file size (e.g., "2.4 MB"). */
+    size?: string;
 }
 
 /**
@@ -103,6 +116,8 @@ export interface InkflowOptions {
         onUploadImage?: (file: File) => Promise<string | null>;
         /** Hook invoked when inserting a video. Resolve to a URL, or null when the user cancels. */
         onInsertVideo?: () => Promise<string | null>;
+        /** Hook invoked when inserting an attachment file. Resolve to an AttachmentResult, a URL string, or null when the user cancels. */
+        onInsertAttachment?: () => Promise<AttachmentResult | string | null>;
     };
 }
 
