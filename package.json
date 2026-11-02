@@ -1,6 +1,6 @@
 {
   "name": "inkflow-editor",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "type": "module",
   "main": "./dist/inkflow-editor.umd.js",
   "module": "./dist/inkflow-editor.es.js",
@@ -25,7 +25,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && vite build --mode emoji && node scripts/prepare-dist-types.js",
-    "build:demo": "vite build -c vite.demo.config.ts",
+    "build:demo": "npm run build && node scripts/build-demo.js",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,js,css,html}\"",
     "lint": "eslint src tests e2e scripts *.config.js *.config.ts",

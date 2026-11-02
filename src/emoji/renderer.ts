@@ -14,10 +14,11 @@ export interface ParseEmojiOptions {
 const EMOJI_REGEX = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1F200}-\u{1F2FF}\u{1F004}-\u{1F0CF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{2B50}\u{2B55}\u{231A}\u{231B}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{25FD}\u{25FE}\u{2122}\u{00A9}\u{00AE}](?:\uFE0F|\u200D[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{2B50}\u{2B55}\u{231A}\u{231B}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{25FD}\u{25FE}\u{2122}\u{00A9}\u{00AE}\u{FE0F}]*)*/gu;
 
 /**
- * Standard public Twemoji SVG CDN fallback.
- * Used when no assetBase is provided and local assets cannot be inferred.
+ * Default local Twemoji SVG assets location.
+ * Inkflow Editor strictly commits to zero external dependencies;
+ * all curated emojis are bundled and served from the package's local distribution (`dist/emoji/svg/`).
  */
-export const DEFAULT_EMOJI_ASSET_BASE = 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/';
+export const DEFAULT_EMOJI_ASSET_BASE = './emoji/svg/';
 
 /**
  * Cached script base path captured during initial synchronous evaluation.

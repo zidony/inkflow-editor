@@ -17,11 +17,10 @@ describe('Emoji Module', () => {
             expect(resolveAssetBase('https://cdn.example.com/svg')).toBe('https://cdn.example.com/svg/');
         });
 
-        it('should fall back to standard twemoji CDN when no customBase is provided', () => {
+        it('should fall back to local relative assets when no customBase is provided', () => {
             const resolved = resolveAssetBase();
             expect(resolved).toBe(DEFAULT_EMOJI_ASSET_BASE);
-            expect(resolved).toContain('jsdelivr.net');
-            expect(resolved.endsWith('/')).toBe(true);
+            expect(resolved).toBe('./emoji/svg/');
         });
     });
 

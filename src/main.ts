@@ -1,4 +1,5 @@
 import './inkflow-editor.css';
+import './emoji/emoji.css';
 import { InkflowEditor } from './core/editor';
 import { emojiExtension } from './emoji';
 

@@ -250,8 +250,8 @@ export class EmojiPickerInstance {
         this.isUserScrolling = false;
         this.highlightTab(sectionId);
 
-        // 计算目标滚动距离，留出吸顶空间
-        const scrollOffset = targetSection.offsetTop - this.scrollAreaEl.offsetTop;
+        // 当 scrollAreaEl 具有 position: relative 时，targetSection.offsetTop 即为相对于容器顶部的精确垂直距离
+        const scrollOffset = targetSection.offsetTop;
         this.scrollAreaEl.scrollTo({
             top: scrollOffset,
             behavior: 'smooth'
@@ -276,8 +276,7 @@ export class EmojiPickerInstance {
             let currentActiveId = '';
 
             for (const [id, secEl] of this.sectionEls.entries()) {
-                const offsetTop = secEl.offsetTop - this.scrollAreaEl.offsetTop;
-                if (offsetTop <= scrollPos) {
+                if (secEl.offsetTop <= scrollPos) {
                     currentActiveId = id;
                 }
             }

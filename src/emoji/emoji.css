@@ -96,6 +96,7 @@
 
 /* Continuous Scrollable Area */
 .inkflow-emoji-scroll-area {
+    position: relative;
     padding: 4px 8px 10px;
     height: 250px;
     max-height: 250px;
