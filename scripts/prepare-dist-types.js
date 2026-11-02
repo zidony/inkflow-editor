@@ -159,6 +159,7 @@ export interface ParseEmojiOptions {
 export declare function parseEmoji(root: HTMLElement, options?: ParseEmojiOptions): void;
 export declare function emojiToHTML(textOrHtml: string, options?: ParseEmojiOptions): string;
 export declare function resolveAssetBase(customBase?: string): string;
+export declare const DEFAULT_EMOJI_ASSET_BASE: string;
 export declare function toCodePoint(unicodeSurrogates: string, sep?: string): string;
 export declare function getEmojiSvgUrl(emoji: string, assetBase: string): string;
 

@@ -14,13 +14,46 @@ export interface ParseEmojiOptions {
 const EMOJI_REGEX = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1F200}-\u{1F2FF}\u{1F004}-\u{1F0CF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{2B50}\u{2B55}\u{231A}\u{231B}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{25FD}\u{25FE}\u{2122}\u{00A9}\u{00AE}](?:\uFE0F|\u200D[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{2B50}\u{2B55}\u{231A}\u{231B}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{25FD}\u{25FE}\u{2122}\u{00A9}\u{00AE}\u{FE0F}]*)*/gu;
 
 /**
+ * Standard public Twemoji SVG CDN fallback.
+ * Used when no assetBase is provided and local assets cannot be inferred.
+ */
+export const DEFAULT_EMOJI_ASSET_BASE = 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/';
+
+/**
+ * Cached script base path captured during initial synchronous evaluation.
+ * In browser UMD contexts, document.currentScript is only non-null during the initial
+ * execution of the <script> tag. In later asynchronous handlers (e.g. clicking the emoji button),
+ * document.currentScript becomes null.
+ */
+let initialScriptBase = '';
+if (typeof document !== 'undefined') {
+    const currentScript = document.currentScript as (HTMLScriptElement | null);
+    if (currentScript && currentScript.src) {
+        try {
+            const url = new URL(currentScript.src);
+            const pathParts = url.pathname.split('/');
+            pathParts.pop(); // remove script filename
+            initialScriptBase = `${url.origin}${pathParts.join('/')}/emoji/svg/`;
+        } catch {
+            // fall through
+        }
+    }
+}
+
+/**
  * Resolves the default assetBase.
- * In browser UMD contexts, tries to infer from currentScript location;
- * otherwise defaults to '/static/ytcms/inkflow-editor/emoji/svg/'.
+ * Priority:
+ * 1. Explicitly configured customBase.
+ * 2. Inferred script directory if loaded via UMD <script>.
+ * 3. Standard public Twemoji CDN fallback (works out-of-the-box in demos & external projects).
  */
 export function resolveAssetBase(customBase?: string): string {
     if (customBase) {
         return customBase.endsWith('/') ? customBase : `${customBase}/`;
+    }
+
+    if (initialScriptBase) {
+        return initialScriptBase;
     }
 
     if (typeof document !== 'undefined') {
@@ -29,7 +62,7 @@ export function resolveAssetBase(customBase?: string): string {
             try {
                 const url = new URL(currentScript.src);
                 const pathParts = url.pathname.split('/');
-                pathParts.pop(); // remove script name
+                pathParts.pop();
                 return `${url.origin}${pathParts.join('/')}/emoji/svg/`;
             } catch {
                 // fall through
@@ -37,7 +70,7 @@ export function resolveAssetBase(customBase?: string): string {
         }
     }
 
-    return '/static/ytcms/inkflow-editor/emoji/svg/';
+    return DEFAULT_EMOJI_ASSET_BASE;
 }
 
 /**

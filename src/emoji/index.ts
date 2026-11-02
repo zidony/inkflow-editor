@@ -11,6 +11,7 @@ export {
     parseEmoji,
     emojiToHTML,
     resolveAssetBase,
+    DEFAULT_EMOJI_ASSET_BASE,
     type ParseEmojiOptions
 } from './renderer';
 
