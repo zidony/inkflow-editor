@@ -19,6 +19,7 @@ const browserGlobals = {
     HTMLElement: 'readonly',
     HTMLInputElement: 'readonly',
     HTMLParagraphElement: 'readonly',
+    HTMLScriptElement: 'readonly',
     HTMLSelectElement: 'readonly',
     HTMLTableCellElement: 'readonly',
     HTMLTableRowElement: 'readonly',

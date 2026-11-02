@@ -101,11 +101,79 @@ export declare class InkflowEditor implements EditorInstance {
 
 const emojiTypes = `import type { EmojiExtension } from './index';
 
-/**
- * Creates the optional emoji extension.
- * Import this entry only when the emoji picker should be included in the bundle.
- */
-export declare function emojiExtension(): EmojiExtension;
+export interface EmojiCategory {
+    id: string;
+    name: string;
+    icon: string;
+    emojis: string[];
+}
+
+export interface EmojiLocale {
+    ui: {
+        title: string;
+        recent: string;
+        recentEmpty: string;
+    };
+    categories: Record<string, string>;
+    names: Record<string, string>;
+}
+
+export interface EmojiSelectPayload {
+    char: string;
+    name: string;
+    src: string;
+}
+
+export interface EmojiPickerOptions {
+    container?: HTMLElement;
+    locale?: 'zh-CN' | 'en-US' | EmojiLocale;
+    assetBase?: string;
+    categories?: EmojiCategory[];
+    recent?: false | { max?: number; storageKey?: string };
+    closeOnSelect?: boolean;
+    onSelect: (payload: EmojiSelectPayload) => void;
+}
+
+export declare class EmojiPickerInstance {
+    constructor(options: EmojiPickerOptions);
+    open(anchor?: HTMLElement): void;
+    close(): void;
+    toggle(anchor?: HTMLElement): void;
+    isOpen(): boolean;
+    switchTab(tabId: string): void;
+    destroy(): void;
+}
+
+export declare function createEmojiPicker(options: EmojiPickerOptions): EmojiPickerInstance;
+export declare function bindEmojiPicker(
+    buttonEl: HTMLElement,
+    options: Omit<EmojiPickerOptions, 'container'> & { container?: HTMLElement }
+): EmojiPickerInstance;
+
+export interface ParseEmojiOptions {
+    assetBase?: string;
+    className?: string;
+    onlyKnown?: boolean;
+}
+
+export declare function parseEmoji(root: HTMLElement, options?: ParseEmojiOptions): void;
+export declare function emojiToHTML(textOrHtml: string, options?: ParseEmojiOptions): string;
+export declare function resolveAssetBase(customBase?: string): string;
+export declare function toCodePoint(unicodeSurrogates: string, sep?: string): string;
+export declare function getEmojiSvgUrl(emoji: string, assetBase: string): string;
+
+export declare const emojiCategories: EmojiCategory[];
+export declare const allEmojiChars: string[];
+export declare const allEmojiCharSet: Set<string>;
+
+export declare const zhCN: EmojiLocale;
+export declare const enUS: EmojiLocale;
+
+export interface EmojiExtensionOptions extends Partial<ParseEmojiOptions> {
+    pickerOptions?: Partial<EmojiPickerOptions>;
+}
+
+export declare function emojiExtension(options?: EmojiExtensionOptions): EmojiExtension;
 export { emojiExtension as createEmojiExtension };
 `;
 
@@ -113,6 +181,23 @@ fs.mkdirSync(distDir, { recursive: true });
 fs.writeFileSync(path.join(distDir, 'index.d.ts'), publicTypes);
 fs.writeFileSync(path.join(distDir, 'emoji.d.ts'), emojiTypes);
 
+// Copy standalone emoji.css and svg assets to dist
+const emojiCssSrc = path.join(process.cwd(), 'src', 'emoji', 'emoji.css');
+if (fs.existsSync(emojiCssSrc)) {
+    fs.copyFileSync(emojiCssSrc, path.join(distDir, 'inkflow-editor-emoji.css'));
+}
+
+const svgSrcDir = path.join(process.cwd(), 'src', 'emoji', 'assets', 'svg');
+const svgDistDir = path.join(distDir, 'emoji', 'svg');
+if (fs.existsSync(svgSrcDir)) {
+    fs.mkdirSync(svgDistDir, { recursive: true });
+    const files = fs.readdirSync(svgSrcDir);
+    for (const f of files) {
+        fs.copyFileSync(path.join(svgSrcDir, f), path.join(svgDistDir, f));
+    }
+}
+
 if (fs.existsSync(generatedTypesDir)) {
     fs.rmSync(generatedTypesDir, { recursive: true, force: true });
 }
+
